@@ -78,7 +78,7 @@ touched area before planning, reviewing, or changing it. Keep detailed rules in
 | Runtime boundaries, persistence, storage, API contracts, or integrations | `docs/guidelines/architecture-guide.md`, relevant `docs/architecture/**`, and `docs/research/**` |
 | Requirements discovery or writing | `docs/guidelines/requirements-guide.md`; create requirement files only after owner-authorized discovery |
 | Research creation, review, or closeout | `docs/guidelines/research-guide.md`, relevant durable docs, and the active project when applicable |
-| Angular feature, API client, component, state, rendering adapter, or frontend test | `docs/guidelines/angular-engineering-guide.md`, `docs/architecture/target-product-architecture.md`, accepted requirements, and a feature-specific plan |
+| Angular feature, API client, component, state, rendering adapter, or frontend test | `docs/guidelines/angular-engineering-guide.md`, `docs/architecture/target-product.md`, accepted requirements, and a feature-specific plan |
 | Planned Kotlin/Spring backend, provider adapter, or persistence | accepted requirements, `docs/guidelines/kotlin-backend-engineering-guide.md`, relevant architecture and research, and a backend plan |
 | Kotlin/Spring backend review | all backend documents routed above |
 | Non-trivial planning and delivery | `docs/guidelines/project-lifecycle.md` and the active `docs/projects/**` file |
