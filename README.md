@@ -26,18 +26,18 @@ Start the backend and frontend in separate terminals:
 
 ```bash
 # terminal 1
-mise run backend
+mise run start backend
 
 # terminal 2
-mise run frontend
+mise run start frontend
 ```
 
 Open `http://localhost:4200`. The current replacement is an application
 foundation; the retained working map is started separately according to
 [Legacy map operation](mapa/README.md).
 
-For focused development, run `mise run simulator` instead of the backend when
-an accepted deterministic contract scenario exists, or `mise run storybook`
+For focused development, run `mise run start simulator` instead of the backend when
+an accepted deterministic contract scenario exists, or `mise run start storybook`
 to start the UI workshop.
 
 After making changes, run the repository-wide verification gate:
@@ -46,7 +46,8 @@ After making changes, run the repository-wide verification gate:
 mise run verify
 ```
 
-Use `mise run assemble` to produce backend and frontend application artifacts.
+Use `mise run build frontend` or `mise run build backend` to produce application
+artifacts, or `mise run build --all` to include the simulator and Storybook.
 
 ## Documentation
 

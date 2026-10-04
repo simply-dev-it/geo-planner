@@ -16,44 +16,34 @@ mise install
 mise run setup
 ```
 
-`setup` performs mutable local npm installation and installs Playwright
-Chromium. `setup-ci` uses frozen npm installation plus Linux browser
-dependencies. Both access external download services.
-
 ## Root Tasks
 
-```bash
-mise run frontend          # Angular development server
-mise run backend           # Spring Boot development server
-mise run storybook         # shared UI workshop
-mise run simulator         # loopback contract simulator
-mise run validate-tasks    # validate mise task definitions
-mise run verify            # aggregate repository quality gate
-mise run assemble          # backend Boot JAR plus production frontend
-mise run ci                # setup-ci followed by verify
-mise run clean             # generated application and test outputs
-```
+Run from the repository root with `mise run <task> [parameters]`:
 
-`mise run verify`, backed by `[tasks.verify]`, is the only aggregate
-verification entry point. It validates the mise graph, checks the requirements
-index, and runs the backend, frontend, simulator, and legacy gates. The legacy
-gate builds from checked-in snapshots but does not refresh external sources.
+| Task | Parameters | Purpose |
+| --- | --- | --- |
+| `setup` | `--ci` optional | Install npm dependencies and Chromium; CI uses lockfiles and browser system dependencies. |
+| `start` | `frontend`, `backend`, `simulator`, `storybook`, or `--all` | Start selected services; `--all` runs them concurrently. |
+| `build` | `frontend`, `backend`, `simulator`, `storybook`, or `--all` | Build production artifacts. |
+| `verify` | `frontend`, `backend`, `simulator`, `requirements`, `legacy`, or `--all` | Run selected quality gates; no parameters runs every gate. |
+| `ci` | — | Run `setup --ci`, then `verify --all`. |
+| `clean` | — | Remove generated application and test outputs. |
 
-`verify-legacy` is available for a focused legacy check. Its implementation,
-`scripts/verify.sh`, is an internal task detail and should not be used as a
-second aggregate entry point.
+For example: `mise run start frontend`. Choose one target or `--all`.
+`start` and `build` without parameters show help; `<task> --help` lists options.
+The hidden `verify-legacy` task remains equivalent to `verify legacy`.
 
-`mise run assemble` assumes setup has completed and creates artifacts without
-publishing or deploying them. On a fresh machine Gradle and npm verification
-may resolve dependencies from the network; application tests must not call live
-product integrations.
+Aggregate `verify` includes task validation, workflow tests, requirements and
+all component checks. Legacy checks use checked-in snapshots without source refresh.
+Setup is explicit; builds and verification may download missing dependencies.
+Builds do not publish, and clean preserves legacy files and local user data.
 
 ## Components
 
 ### Backend
 
-`backend/` is the Kotlin/Spring Boot application. Use the root `backend` and
-`verify-backend` tasks or, for a focused local check, the Gradle wrapper:
+`backend/` is the Kotlin/Spring Boot application. Use `mise run start backend` and
+`mise run verify backend` or, for a focused local check, the Gradle wrapper:
 
 ```bash
 ./gradlew :backend:check
@@ -97,7 +87,7 @@ simulator never defines the contract.
 
 ```bash
 npm --prefix backend-simulator run verify
-mise run simulator
+mise run start simulator
 ```
 
 ### HTTP Examples
@@ -115,7 +105,7 @@ the area index and regenerate the portfolio tables:
 ./scripts/update_requirements_index.py
 ```
 
-The `verify-requirements` mise task compiles and unit-tests the index helper,
+The `mise run verify requirements` command compiles and unit-tests the index helper,
 then runs the read-only check and rejects stale statistics.
 
 ## Pull Request Closeout
@@ -160,6 +150,6 @@ unsupported drafts instead of retaining a speculative migration backlog.
 - Backend dependency resolution failure: retry the focused Gradle task after
   confirming network and repository availability.
 - Stale requirement totals: run the requirement-index updater, then
-  `mise run verify-requirements`.
+  `mise run verify requirements`.
 - Frontend API generation failure: confirm the supplied OpenAPI file exists and
   represents the backend's accepted published contract.
