@@ -106,7 +106,7 @@ Only a complete validated artifact becomes ready. Exact acquisition budgets
 and observable failure behavior are owned by
 [ACQUIRE-001](../requirements/layer-acquisition.md). Runtime orchestration and
 storage handoff are defined in
-[Acquisition And Artifact Flow](../architecture/acquisition-and-artifact-flow.md).
+[Acquisition And Artifact Architecture](../architecture/acquisition-and-artifact.md).
 
 ## Safety Invariants
 

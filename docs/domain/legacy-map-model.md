@@ -1,11 +1,11 @@
-# Legacy Map Model
+# Legacy Map Model Domain
 
 ## Status And Scope
 
 This document owns the terminology, evidence classes, spatial invariants, and
 safety meaning of the retained map workflow. It describes legacy meaning, not
 the complete target product model. Runtime, build, parser, and persistence flow
-are owned by [Map Build Flow](../architecture/map-build-flow.md).
+are owned by [Legacy Map Build Architecture](../architecture/legacy-map-build.md).
 
 The Spatial Evidence domain model is defined in
 [Spatial Evidence Domain](spatial-evidence.md); accepted behavior is indexed in

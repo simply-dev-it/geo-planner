@@ -19,7 +19,7 @@ Observed on 2026-07-25 and expanded through code/configuration tracing on
   recorded in [requirements](../requirements/index.md); migration state and
   cutover evidence are tracked in the
   [parity ledger](prototype-migration-parity-ledger.md); current legacy runtime
-  flow is owned by [Map Build Flow](../architecture/map-build-flow.md).
+  flow is owned by [Map Build Flow](../architecture/legacy-map-build.md).
 - Remaining use: compare each replacement capability against observed legacy
   success, degraded, failure, interaction, persistence, and spatial behavior.
 - Return when: implementing a corresponding capability, changing legacy

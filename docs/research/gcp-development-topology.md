@@ -7,9 +7,9 @@
 - Question: which GCP-facing connections could provide a private development
   deployment without presenting it as an accepted SaaS architecture?
 - Completed outputs: the
-  [target architecture](../architecture/target-product-architecture.md) owns
+  [target architecture](../architecture/target-product.md) owns
   the accepted application, persistence-port, and artifact-store boundaries;
-  the [local data-root contract](../architecture/local-data-root.md) owns local
+  the [local data-root contract](../architecture/data-root.md) owns local
   artifact safety.
 - Open choices: frontend hosting, identity provider, managed PostgreSQL
   provider, artifact delivery, and durable job orchestration.

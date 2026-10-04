@@ -7,9 +7,9 @@
 - Question: how should a hosted deployment deliver large spatial artifacts and
   use browser storage without making an evictable cache authoritative?
 - Completed outputs: the
-  [local data-root contract](../architecture/local-data-root.md) owns storage
+  [local data-root contract](../architecture/data-root.md) owns storage
   ports and local artifact safety; the
-  [target architecture](../architecture/target-product-architecture.md) owns
+  [target architecture](../architecture/target-product.md) owns
   authoritative PostgreSQL/object-storage boundaries; and
   [ACQUIRE-001](../requirements/layer-acquisition.md) owns bounded acquisition
   and controlled artifact delivery.

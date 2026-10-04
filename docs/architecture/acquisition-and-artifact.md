@@ -1,4 +1,4 @@
-# Acquisition And Artifact Flow
+# Acquisition And Artifact Architecture
 
 ## Status And Scope
 
@@ -120,4 +120,4 @@ manifest, or acquisition record.
 - Keep tests and normal builds independent of live providers.
 
 The deployment-neutral storage semantics and local filesystem safety contract
-are defined in [Local Artifact Data Root Contract](local-data-root.md).
+are defined in [Artifact Data Root Architecture](data-root.md).

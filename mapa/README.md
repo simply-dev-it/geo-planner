@@ -125,5 +125,5 @@ planning, design, and construction decisions.
 
 See the root [repository guide](../docs/guidelines/repository-guide.md) for the
 new application toolchain and the
-[legacy map model](../docs/domain/legacy-map-model.md) for retained spatial
+[legacy map model domain](../docs/domain/legacy-map-model.md) for retained spatial
 semantics.

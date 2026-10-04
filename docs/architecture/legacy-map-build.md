@@ -1,11 +1,11 @@
-# Map Build Flow
+# Legacy Map Build Architecture
 
 ## Status And Scope
 
 This document describes the current runtime and data flow of the retained
 Python/HTML legacy application. The replacement foundation and accepted target
 boundaries are documented in
-[Target Product Architecture](target-product-architecture.md).
+[Target Product Architecture](target-product.md).
 
 ```mermaid
 flowchart LR
@@ -42,7 +42,7 @@ flowchart LR
 - `project-config.json` supplies build and acquisition configuration, including
   the output filename, source services, raster paths, and the spatial/source
   contract defined by the
-  [Legacy Map Model](../domain/legacy-map-model.md).
+  [Legacy Map Model Domain](../domain/legacy-map-model.md).
 - `map-config.json` supplies presentation settings only.
 - `sources/` and `assets/` are checked-in evidence snapshots.
   `update-sources.sh` replaces them through explicit network calls;

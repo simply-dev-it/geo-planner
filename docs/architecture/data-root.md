@@ -1,8 +1,8 @@
-# Local Artifact Data Root Contract
+# Artifact Data Root Architecture
 
 ## Status And Scope
 
-Accepted migration boundary for the future local-MVP and self-hosted backend.
+Accepted migration boundary for the future MVP and self-hosted backend.
 The data root is the filesystem implementation of large-artifact storage, not
 the user-state database and not the product's commercial deployment contract.
 This describes storage ownership and safety; it does not claim that the Kotlin
@@ -68,7 +68,7 @@ Production deployment must set an explicit persistent path. Project input,
 provider responses, filenames, and HTTP parameters never select or alter the
 root.
 
-In the local MVP the backend runs on the user's machine, so artifact bytes are
+In the MVP the backend runs on the user's machine, so artifact bytes are
 physically client-local and do not consume centralized server storage. User
 state is still authoritative in the local PostgreSQL container.
 
@@ -101,7 +101,7 @@ remain:
 
 ## Privacy And Repository Boundary
 
-The local artifact root may contain generated exports, provider snapshots, and
+The artifact root may contain generated exports, provider snapshots, and
 location-identifying pixels. PostgreSQL contains private sketches and property
 state. Neither store may be staged, logged as content, embedded into frontend
 source, or copied into test fixtures.

@@ -52,9 +52,9 @@ artifacts, or `mise run build --all` to include the simulator and Storybook.
 ## Documentation
 
 - [Repository setup and commands](docs/guidelines/repository-guide.md)
-- [Target product architecture](docs/architecture/target-product-architecture.md)
-- [Acquisition and artifact flow](docs/architecture/acquisition-and-artifact-flow.md)
+- [Target product architecture](docs/architecture/target-product.md)
+- [Acquisition and artifact flow](docs/architecture/acquisition-and-artifact.md)
 - [Spatial Evidence domain](docs/domain/spatial-evidence.md)
-- [Legacy map model and safety contracts](docs/domain/legacy-map-model.md)
+- [Legacy map model domain](docs/domain/legacy-map-model.md)
 - [Requirements portfolio](docs/requirements/index.md)
 - [Legacy map operation](mapa/README.md)
