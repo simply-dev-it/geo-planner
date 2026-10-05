@@ -38,10 +38,6 @@ requirements and all component checks. Legacy checks use checked-in snapshots wi
 Setup is explicit; builds and verification may download missing dependencies.
 Builds do not publish, and clean preserves legacy files and local user data.
 
-`python3 scripts/check_markdown_links.py` checks local Markdown paths and heading
-fragments in tracked and non-ignored new files. It supports inline and reference
-links, skips code examples and external URLs, and runs offline as part of `verify`.
-
 ## Components
 
 ### Backend
