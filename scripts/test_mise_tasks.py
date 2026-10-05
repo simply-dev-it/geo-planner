@@ -155,6 +155,16 @@ if [ "${TASK_TEST_FAIL:-}" = "$(basename "$0")" ]; then exit 17; fi
         self.run_task("verify", "--all", success=False)
         self.assertIn("gradlew :backend:check", self.commands())
 
+    def test_legacy_gate_failure_reaches_verify_and_ci(self):
+        self.env["TASK_TEST_FAIL"] = "verify.sh"
+        for args in [("verify", "--all"), ("ci",)]:
+            with self.subTest(args=args):
+                self.log.unlink(missing_ok=True)
+                self.run_task(*args, success=False)
+                self.assertIn("verify.sh", self.commands())
+                if args == ("ci",):
+                    self.assertIn("npm --prefix frontend ci", self.commands())
+
 
 if __name__ == "__main__":
     unittest.main()
