@@ -18,12 +18,12 @@ request larger.
 
 ## Evidence Collection
 
-1. Identify the pull request's base and head revisions.
-2. Inspect the complete merge-base diff, not only the latest working-tree edit.
+1. Identify the PR's base and head, or the baseline and scope for local review.
+2. Inspect the full merge-base diff for a PR; for local review include relevant
+   commits, staged, unstaged, and untracked files. Separate unrelated owner changes.
 3. For material rewrites of durable documents, inspect a word-level diff to identify
    lost decisions, provenance, evidence, or constraints.
-4. Read the current review comments and distinguish them from summaries or unrelated
-   discussion.
+4. For a PR, read current review comments separately from summaries or discussion.
 5. Use existing deterministic checks as evidence. Do not manually repeat a passing
    structure, formatting, index, or local-reference check unless diagnosing it.
 
@@ -63,5 +63,5 @@ for confirmed correctness, safety, data-loss, or owner-approved scope issues.
 For a requirement added, removed, renamed, reidentified, or moved between files,
 check that domain and architecture ownership, capability routing, source evidence,
 and dependency ordering still match it. Apply any repository-specific requirement
-contract. Existing scripts, rather than this semantic review, own index freshness,
-stage allocation, and local-reference validation.
+contract. Use repository checks for index freshness, stage allocation and local
+references; verify affected references separately when those checks lack coverage.

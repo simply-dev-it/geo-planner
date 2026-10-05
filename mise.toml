@@ -112,6 +112,8 @@ unset usage_target usage_all
 if [ "$target" = all ]; then
   mise tasks validate
   python3 -m unittest discover -s scripts -p 'test_mise_tasks.py'
+  python3 -m unittest discover -s scripts -p 'test_check_markdown_links.py'
+  python3 scripts/check_markdown_links.py
   exec mise run verify backend ::: verify frontend ::: verify simulator ::: verify requirements ::: verify legacy
 fi
 case "$target" in
