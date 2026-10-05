@@ -3,94 +3,141 @@ java = "temurin-25.0.3+9.0.LTS"
 node = "24.18.1"
 
 [tasks.setup]
-description = "Install mutable local npm dependencies and Playwright Chromium"
-run = [
-  "npm --prefix frontend install",
-  "npm --prefix backend-simulator install",
-  "npm --prefix frontend exec -- playwright install chromium",
-]
+description = "Install npm dependencies and Playwright Chromium; --ci uses frozen dependencies"
+usage = '''
+flag "--ci" help="Use npm ci and install browser system dependencies"
+'''
+run = '''
+set -eu
+if [ "${usage_ci:-false}" = true ]; then
+  npm --prefix frontend ci
+  npm --prefix backend-simulator ci
+  npm --prefix frontend exec -- playwright install --with-deps chromium
+else
+  npm --prefix frontend install
+  npm --prefix backend-simulator install
+  npm --prefix frontend exec -- playwright install chromium
+fi
+'''
 
-[tasks.setup-ci]
-description = "Install frozen CI npm dependencies and Playwright Chromium with system dependencies"
-run = [
-  "npm --prefix frontend ci",
-  "npm --prefix backend-simulator ci",
-  "npm --prefix frontend exec -- playwright install --with-deps chromium",
-]
+[tasks.start]
+description = "Start a component or all development services"
+usage = '''
+arg "[target]" {
+  choices "frontend" "backend" "simulator" "storybook"
+}
+flag "--all" help="Run for all supported targets"
+'''
+run = '''
+set -eu
+target="${usage_target:-}"
+if [ "${usage_all:-false}" = true ]; then
+  if [ -n "$target" ]; then
+    echo "Choose a target or --all, not both." >&2
+    exit 2
+  fi
+  target=all
+elif [ -z "$target" ]; then
+  exec mise run start --help
+fi
+unset usage_target usage_all
+case "$target" in
+  frontend) exec npm --prefix frontend start ;;
+  backend) exec ./gradlew :backend:bootRun --console=plain ;;
+  simulator)
+    npm --prefix backend-simulator run build
+    exec npm --prefix backend-simulator start
+    ;;
+  storybook) exec npm --prefix frontend run storybook ;;
+  all) exec mise run --jobs 4 start frontend ::: start backend ::: start simulator ::: start storybook ;;
+esac
+'''
 
-[tasks.frontend]
-description = "Run the Angular development server"
-dir = "frontend"
-run = "npm start"
-
-[tasks.backend]
-description = "Run the Spring Boot development server"
-dir = "backend"
-run = "../gradlew :backend:bootRun --console=plain"
-
-[tasks.storybook]
-description = "Run the shared UI workshop"
-dir = "frontend"
-run = "npm run storybook"
-
-[tasks.simulator]
-description = "Run the backend contract simulator"
-dir = "backend-simulator"
-run = [
-  "npm run build",
-  "npm start"
-]
-
-[tasks.validate-tasks]
-description = "Validate mise task definitions"
-run = "mise tasks validate"
-
-[tasks.verify-backend]
-description = "Run the complete Kotlin/Spring backend quality gate"
-run = "./gradlew :backend:check"
-
-[tasks.verify-frontend]
-description = "Run the complete Angular and UI quality gate"
-run = "npm --prefix frontend run verify"
-
-[tasks.verify-simulator]
-description = "Run the complete backend simulator quality gate"
-run = "npm --prefix backend-simulator run verify"
-
-[tasks.verify-requirements]
-description = "Test the requirements-index helper and check the generated portfolio index"
-run = [
-  "python3 -m py_compile scripts/update_requirements_index.py scripts/test_update_requirements_index.py",
-  "python3 -m unittest discover -s scripts -p 'test_update_requirements_index.py'",
-  "python3 scripts/update_requirements_index.py --check",
-]
-
-[tasks.verify-legacy]
-description = "Run the retained legacy Python/map offline quality gate"
-run = "./scripts/verify.sh"
+[tasks.build]
+description = "Build a component or all application and workshop artifacts"
+usage = '''
+arg "[target]" {
+  choices "frontend" "backend" "simulator" "storybook"
+}
+flag "--all" help="Run for all supported targets"
+'''
+run = '''
+set -eu
+target="${usage_target:-}"
+if [ "${usage_all:-false}" = true ]; then
+  if [ -n "$target" ]; then
+    echo "Choose a target or --all, not both." >&2
+    exit 2
+  fi
+  target=all
+elif [ -z "$target" ]; then
+  exec mise run build --help
+fi
+unset usage_target usage_all
+if [ "$target" = backend ] || [ "$target" = all ]; then
+  ./gradlew :backend:bootJar
+fi
+if [ "$target" = frontend ] || [ "$target" = all ]; then
+  npm --prefix frontend run build
+fi
+if [ "$target" = simulator ] || [ "$target" = all ]; then
+  npm --prefix backend-simulator run build
+fi
+if [ "$target" = storybook ] || [ "$target" = all ]; then
+  npm --prefix frontend run storybook:build
+fi
+'''
 
 [tasks.verify]
-description = "Run all repository quality gates"
-depends = [
-  "validate-tasks",
-  "verify-backend",
-  "verify-frontend",
-  "verify-simulator",
-  "verify-requirements",
-  "verify-legacy",
-]
+description = "Verify a component; no arguments or --all runs every repository gate"
+usage = '''
+arg "[target]" {
+  choices "frontend" "backend" "simulator" "requirements" "legacy"
+}
+flag "--all" help="Run for all supported targets"
+'''
+run = '''
+set -eu
+target="${usage_target:-}"
+if [ "${usage_all:-false}" = true ]; then
+  if [ -n "$target" ]; then
+    echo "Choose a target or --all, not both." >&2
+    exit 2
+  fi
+  target=all
+elif [ -z "$target" ]; then
+  target=all
+fi
+unset usage_target usage_all
+if [ "$target" = all ]; then
+  mise tasks validate
+  python3 -m unittest discover -s scripts -p 'test_mise_tasks.py'
+  exec mise run verify backend ::: verify frontend ::: verify simulator ::: verify requirements ::: verify legacy
+fi
+case "$target" in
+  backend) exec ./gradlew :backend:check ;;
+  frontend) exec npm --prefix frontend run verify ;;
+  simulator) exec npm --prefix backend-simulator run verify ;;
+  requirements)
+    python3 -m py_compile scripts/update_requirements_index.py scripts/test_update_requirements_index.py
+    python3 -m unittest discover -s scripts -p 'test_update_requirements_index.py'
+    exec python3 scripts/update_requirements_index.py --check
+    ;;
+  legacy) exec ./scripts/verify.sh ;;
+esac
+'''
 
-[tasks.assemble]
-description = "Assemble deployable backend and frontend artifacts"
-run = [
-  "./gradlew :backend:bootJar",
-  "npm --prefix frontend run build",
-]
+[tasks.verify-legacy]
+description = "Compatibility entry point for the offline legacy quality gate"
+hide = true
+run = "mise run verify legacy"
 
 [tasks.ci]
-description = "Install frozen dependencies and run the pull-request quality gate"
-depends = ["setup-ci"]
-run = [{ task = "verify" }]
+description = "Install frozen dependencies, then run every repository quality gate"
+run = [
+  "mise run setup --ci",
+  "mise run verify --all",
+]
 
 [tasks.clean]
 description = "Remove generated backend, frontend, simulator, and browser-test outputs"

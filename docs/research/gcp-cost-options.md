@@ -9,8 +9,8 @@
   can support intermittent cloud integration without creating an unjustified
   standing cost?
 - Completed decisions: PostgreSQL is the accepted persistence model; the
-  [target architecture](../architecture/target-product-architecture.md) and
-  [local data-root contract](../architecture/local-data-root.md) own state and
+  [target architecture](../architecture/target-product.md) and
+  [local data-root contract](../architecture/data-root.md) own state and
   artifact boundaries. [GCP Development Topology](gcp-development-topology.md)
   records candidate cloud connections.
 - Open decisions: cloud development profile, managed PostgreSQL provider,

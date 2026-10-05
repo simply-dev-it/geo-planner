@@ -10,8 +10,8 @@
 - Evidence owner: [Prototype Behavior Inventory](prototype-behavior-inventory.md).
 - Durable outputs: accepted behavior belongs to the linked requirement files;
   cross-cutting target boundaries belong to the
-  [target architecture](../architecture/target-product-architecture.md) and
-  [local data-root contract](../architecture/local-data-root.md).
+  [target architecture](../architecture/target-product.md) and
+  [local data-root contract](../architecture/data-root.md).
 - Current progress: functional rows have accepted requirements but no row has
   implementation or end-to-end verification evidence yet; the repository-data
   boundary is decided but not verified for target runtime startup.
@@ -50,7 +50,7 @@ requirement or cutover.
 | `PARITY-010` | Persist, edit, delete, and clear sketches safely | STAGE-2 | Whole-collection loopback save, atomic file replacement, failure preservation | [SKETCH-002](../requirements/sketches.md): immutable IDs, optimistic revision, and authoritative backend storage | `REQUIREMENT_ACCEPTED` | Stale writes cannot overwrite newer data; create/edit/delete/clear survive restart; duplicate geometries remain distinct; failed writes preserve the accepted revision. |
 | `PARITY-011` | Import/export legacy sketches | STAGE-2 | GeoJSON export and ignored `manual-overlays.json` | [SKETCH-003](../requirements/sketches.md): previewed, reported, idempotent import and CRS-qualified export | `REQUIREMENT_ACCEPTED` | Same-file re-import creates no duplicates; valid IDs persist; missing IDs stabilize; source remains untouched; export round-trips geometry, CRS, identity, and metadata. |
 | `PARITY-012` | Calculate source/sketch spatial relationships | STAGE-3 | Not implemented; owner-supplied percentages are non-calculated metadata | [ANALYSIS-001](../requirements/spatial-analysis.md): qualified vector sources and measured intersections | `REQUIREMENT_ACCEPTED` | Representative intersections, holes, multipart geometry, uncovered area, precision, provenance, and failure cases pass end-to-end acceptance. |
-| `PARITY-013` | Keep runtime data out of tracked repository content | MVP foundation | Ignore rules, local overlay behavior, synthetic-fixture checks | [Local data-root contract](../architecture/local-data-root.md): PostgreSQL user state and authorized artifact storage remain valid product storage | `DECIDED` | Clean clone/startup creates only ignored artifact state and local PostgreSQL data; path traversal and unwritable-root tests fail safely; tracked fixtures remain unchanged. |
+| `PARITY-013` | Keep runtime data out of tracked repository content | MVP foundation | Ignore rules, local overlay behavior, synthetic-fixture checks | [Local data-root contract](../architecture/data-root.md): PostgreSQL user state and authorized artifact storage remain valid product storage | `DECIDED` | Clean clone/startup creates only ignored artifact state and local PostgreSQL data; path traversal and unwritable-root tests fail safely; tracked fixtures remain unchanged. |
 
 ## Behaviors Not Retained As Product Contracts
 

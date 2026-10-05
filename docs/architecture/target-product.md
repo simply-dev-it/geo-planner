@@ -6,12 +6,12 @@ This document is the entry point for accepted target system boundaries. The
 repository contains Angular and Kotlin/Spring Boot application foundations plus
 a health-only Node contract simulator; they do not yet implement the product
 capabilities below. Current legacy runtime behavior is documented in
-[Map Build Flow](map-build-flow.md).
+[Legacy Map Build Architecture](legacy-map-build.md).
 
 Domain concepts and invariants are owned by
 [Spatial Evidence Domain](../domain/spatial-evidence.md). Provider
 orchestration and artifact promotion are owned by
-[Acquisition And Artifact Flow](acquisition-and-artifact-flow.md). Exact
+[Acquisition And Artifact Architecture](acquisition-and-artifact.md). Exact
 user-visible behavior remains in the
 [requirements portfolio](../requirements/index.md).
 
@@ -141,7 +141,7 @@ PostgreSQL state and filesystem or object artifacts remain adapters behind
 deployment-neutral `RuntimeStateStore` and `ArtifactStore` ports. Domain and
 application services never branch on a provider or expose paths and bucket keys
 as product identity. Exact storage semantics and migration safety are defined
-in [Local Artifact Data Root Contract](local-data-root.md).
+in [Artifact Data Root Contract](data-root.md).
 
 ## Shared Contract Boundary
 
@@ -194,7 +194,7 @@ but never authoritative projects, sketches, manifests, or acquisition records.
 - Keep automated tests and normal builds independent of live providers.
 
 Detailed provider and artifact safeguards are defined in
-[Acquisition And Artifact Flow](acquisition-and-artifact-flow.md).
+[Acquisition And Artifact Architecture](acquisition-and-artifact.md).
 
 ## Migration Boundaries
 

@@ -10,7 +10,7 @@
 - Completed outputs: [ACQUIRE-001](../requirements/layer-acquisition.md) owns
   safe acquisition, [LAYER-004](../requirements/layer-viewing.md) owns raster
   interpretation, and
-  [acquisition flow](../architecture/acquisition-and-artifact-flow.md) owns
+  [acquisition flow](../architecture/acquisition-and-artifact.md) owns
   provider-adapter and catalog boundaries.
 - Remaining work: validate the exact live endpoint, capabilities, licence,
   coverage, and operational limits for each adapter slice.

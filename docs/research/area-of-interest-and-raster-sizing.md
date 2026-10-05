@@ -10,7 +10,7 @@
   [PROJECT-001](../requirements/projects-and-aoi.md) owns parcel AOI behavior;
   [ACQUIRE-001](../requirements/layer-acquisition.md) owns raster acquisition;
   [Spatial Evidence domain](../domain/spatial-evidence.md) owns AOI meaning;
-  and [acquisition flow](../architecture/acquisition-and-artifact-flow.md) owns
+  and [acquisition flow](../architecture/acquisition-and-artifact.md) owns
   streaming, validation, and artifact promotion boundaries.
 - Remaining questions: whether users manipulate an expert bbox directly or
   only context geometry, and how surrounding parcels are displayed without
