@@ -33,8 +33,8 @@ For example: `mise run start frontend`. Choose one target or `--all`.
 `start` and `build` without parameters show help; `<task> --help` lists options.
 The hidden `verify-legacy` task remains equivalent to `verify legacy`.
 
-Aggregate `verify` includes task validation, workflow tests, requirements and
-all component checks. Legacy checks use checked-in snapshots without source refresh.
+Aggregate `verify` includes task validation, workflow tests, local Markdown links,
+requirements and all component checks. Legacy checks use checked-in snapshots without source refresh.
 Setup is explicit; builds and verification may download missing dependencies.
 Builds do not publish, and clean preserves legacy files and local user data.
 

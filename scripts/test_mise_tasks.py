@@ -28,7 +28,7 @@ class MiseTaskTests(unittest.TestCase):
 line="$(basename "$0")"
 for arg in "$@"; do line="$line $arg"; done
 printf '%s\\n' "$line" >> "$TASK_TEST_LOG"
-if [ "${TASK_TEST_FAIL:-}" = "$(basename "$0")" ]; then exit 17; fi
+if [ "${TASK_TEST_FAIL:-}" = "$(basename "$0")" ] || [ "${TASK_TEST_FAIL:-}" = "$line" ]; then exit 17; fi
 '''
         for command in ["npm", "python3", "node"]:
             path = bin_dir / command
@@ -119,6 +119,8 @@ if [ "${TASK_TEST_FAIL:-}" = "$(basename "$0")" ]; then exit 17; fi
             self.assertEqual(self.commands(), commands)
         all_commands = [item for items in expected.values() for item in items]
         all_commands.append("python3 -m unittest discover -s scripts -p test_mise_tasks.py")
+        all_commands.append("python3 -m unittest discover -s scripts -p test_check_markdown_links.py")
+        all_commands.append("python3 scripts/check_markdown_links.py")
         for args in [(), ("--all",)]:
             self.log.unlink()
             self.run_task("verify", *args)
@@ -164,6 +166,15 @@ if [ "${TASK_TEST_FAIL:-}" = "$(basename "$0")" ]; then exit 17; fi
                 self.assertIn("verify.sh", self.commands())
                 if args == ("ci",):
                     self.assertIn("npm --prefix frontend ci", self.commands())
+
+    def test_broken_documentation_stops_aggregate_before_component_gates(self):
+        self.env["TASK_TEST_FAIL"] = "python3 scripts/check_markdown_links.py"
+        self.run_task("verify", "--all", success=False)
+        self.assertEqual(self.commands(), [
+            "python3 -m unittest discover -s scripts -p test_mise_tasks.py",
+            "python3 -m unittest discover -s scripts -p test_check_markdown_links.py",
+            "python3 scripts/check_markdown_links.py",
+        ])
 
 
 if __name__ == "__main__":
