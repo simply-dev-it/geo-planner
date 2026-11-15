@@ -11,6 +11,9 @@ Configuration or serialized fields belong in domain only when they form a
 stable product data contract. File paths, framework types, parser procedures,
 HTTP shapes, and storage-provider details do not.
 
+Use the [documentation guide](documentation-guide.md) for shared category
+boundaries.
+
 ## Document Shape
 
 Use only sections that help explain the model. Near the top, state:
@@ -52,7 +55,7 @@ decorative metadata or repeat the same contract in multiple domain files.
   safety claim?
 - Are runtime sequence, parser mechanics, storage layout, and deployment kept
   in architecture?
-- Are exact user-visible outcomes and limits linked rather than duplicated from
-  requirements?
+- Are current user workflows linked to the specification, and expected
+  outcomes and acceptance linked to requirements rather than duplicated?
 - Are source claims and unresolved evidence linked to research?
 - Is current, legacy, and target meaning unambiguous?

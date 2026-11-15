@@ -1,4 +1,4 @@
 interface:
   display_name: "Protocol D: Inbox Triage"
   short_description: "Turn loose notes into actionable project records"
-  default_prompt: "Use $triage-inbox to classify and refine loose notes from INBOX.md."
+  default_prompt: "Use $triage-inbox to classify and refine loose notes or an inbox."

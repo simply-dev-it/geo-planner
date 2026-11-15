@@ -11,49 +11,28 @@ capabilities below. Current legacy runtime behavior is documented in
 Domain concepts and invariants are owned by
 [Spatial Evidence Domain](../domain/spatial-evidence.md). Provider
 orchestration and artifact promotion are owned by
-[Acquisition And Artifact Architecture](acquisition-and-artifact.md). Exact
-user-visible behavior remains in the
-[requirements portfolio](../requirements/index.md).
+[Acquisition And Artifact Architecture](acquisition-and-artifact.md).
+Current user-visible behavior belongs to the
+[application specification](../spec/index.md); expected outcomes and acceptance
+belong to the [requirements portfolio](../requirements/index.md).
 
-## Implementation State
+## Current Runtime Composition
 
 ```mermaid
 flowchart LR
-    LEGACY["Runnable Python/HTML legacy map"]
-
-    subgraph FOUNDATION["Current replacement foundation"]
-        FRONTEND["Angular shell<br/>runtime config + UI library"]
-        BACKEND["Kotlin/Spring Boot shell<br/>test endpoint + migration foundation"]
-        SIMULATOR["Node contract simulator<br/>health route only"]
-    end
-
-    subgraph TARGET["Accepted target capabilities"]
-        MAP["Project map and layer inspection"]
-        ACQUISITION["AOI resolution and evidence acquisition"]
-        SKETCHES["Versioned sketches"]
-        ANALYSIS["Qualified spatial analysis"]
-    end
-
-    LEGACY -. "migration evidence" .-> MAP
-    LEGACY -. "migration evidence" .-> ACQUISITION
-    LEGACY -. "migration evidence" .-> SKETCHES
-    FRONTEND -. "feature slices" .-> MAP
-    FRONTEND -. "later slices" .-> SKETCHES
-    FRONTEND -. "later slices" .-> ANALYSIS
-    BACKEND -. "feature slices" .-> ACQUISITION
-    BACKEND -. "later slices" .-> SKETCHES
-    BACKEND -. "later slices" .-> ANALYSIS
-    SIMULATOR -. "accepted contract examples" .-> MAP
-
-    classDef target stroke-dasharray: 6 4;
-    class MAP,ACQUISITION,SKETCHES,ANALYSIS target
+    LEGACY["Standalone legacy map"] --> EDITOR["Optional loopback editor"]
+    ANGULAR["Angular foundation page"]
+    KOTLIN["Kotlin/Spring Boot test API"]
+    SIMULATOR["Loopback contract simulator health route"]
 ```
 
-The `LEGACY` and `FOUNDATION` nodes describe current repository state. Dashed
-`TARGET` nodes are accepted capabilities that are not yet implemented. Dotted
-arrows describe planned delivery, not runtime calls. The legacy application
-remains the only working map product until the applicable requirements and
-parity gates are verified.
+The replacement UI does not consume a product API yet. The backend test API
+and simulator are independent development facilities. The legacy map remains
+the working product; its workflows and actual limitations are described by the
+[application specification](../spec/index.md). Accepted functional outcomes and
+delivery stages remain in the [requirements portfolio](../requirements/index.md).
+The system boundary below describes accepted target technical design, not an
+implemented runtime or a delivery sequence.
 
 ## System Boundary
 

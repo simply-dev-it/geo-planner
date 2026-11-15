@@ -4,7 +4,8 @@
 
 Product requirements capture concrete functional value that must be preserved or introduced. They explain what a user can accomplish, which real business/data integration enables it, and how the result is accepted end to end.
 
-Requirements are not a substitute for engineering guidelines, architecture, research, or a project plan.
+Use the [documentation guide](documentation-guide.md) for boundaries with the
+current specification, domain, architecture, research, and delivery plans.
 
 ## Organization And Indexing
 

@@ -16,6 +16,18 @@ mise install
 mise run setup
 ```
 
+## Documentation Routing
+
+The [application specification](../spec/index.md) describes current business
+behavior, grouped by functional responsibility and labelled by runtime.
+Before planning, reviewing, or changing a product workflow, read its current
+specification alongside requirements, domain, and architecture. Maintain it
+using the [specification guide](specification-guide.md).
+
+Use the [documentation guide](documentation-guide.md) for shared category
+responsibilities and the [project lifecycle](project-lifecycle.md) for workflow
+selection, acceptance, and PR readiness.
+
 ## Root Tasks
 
 Run from the repository root with `mise run <task> [parameters]`:
@@ -108,7 +120,11 @@ the area index and regenerate the portfolio tables:
 The `mise run verify requirements` command compiles and unit-tests the index helper,
 then runs the read-only check and rejects stale statistics.
 
-## Pull Request Closeout
+## Pull Request Description
+
+Before creating a PR, complete the owner-acceptance and documentation gates in
+[Project Lifecycle](project-lifecycle.md#pull-request-readiness). This section
+owns the repository's description format, not publication authorization.
 
 Use `.github/pull_request_template.md` when creating or updating a pull request
 unless the owner requests another structure. GitHub can surface it during

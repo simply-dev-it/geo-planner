@@ -6,7 +6,8 @@ The Spatial Evidence domain covers assembling, qualifying, and comparing
 geospatial evidence for a bounded property project. This document defines its
 accepted terminology, identity, state, and safety meaning. The model is a
 target model and is not yet implemented by the replacement applications.
-Observable behavior and exact accepted limits remain owned by the
+Current delivered behavior belongs to the [specification](../spec/index.md).
+Expected behavior and exact accepted limits remain owned by the
 [requirements portfolio](../requirements/index.md).
 
 Within this domain, projects and AOI, acquisition, layer viewing, sketches, and
@@ -65,7 +66,7 @@ Layer readiness is independent per project layer:
 
 Failure of one evidence layer does not invalidate an otherwise valid project.
 The last usable artifact is preserved unless the product contract explicitly
-requires removal. Layer presentation and inspection behavior is owned by
+requires removal. Expected layer presentation and inspection behavior is owned by
 [Layer Viewing Requirements](../requirements/layer-viewing.md).
 Candidate source families and their evidence risks remain in
 [Candidate Map Layers](../research/additional-map-layers.md) until discovery
@@ -83,7 +84,7 @@ sketches may represent different intent and are not silently merged.
 Mutations use an optimistic collection revision. A stale revision rejects the
 write and preserves the newer authoritative state. Legacy import is explicit,
 previewed, reported, and idempotent for the same source; it never modifies or
-deletes the source file. Detailed interaction and persistence behavior is owned
+deletes the source file. Expected interaction and persistence behavior is owned
 by [Sketches Requirements](../requirements/sketches.md).
 
 ## Acquisition, Record, And Artifact

@@ -62,6 +62,10 @@
 - Use the order **Findings**, **Decision** or **Accepted Model**, **Alternatives
   Considered**, and **Open Decisions** when all four are present.
 
+The [documentation guide](documentation-guide.md) defines shared content
+ownership and category routing. Use the relevant category guide for document
+shape and the [project lifecycle](project-lifecycle.md) for delivery gates.
+
 ## Specialized Guides
 
 - `angular-engineering-guide.md` defines transferable Angular, API-client,
