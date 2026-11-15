@@ -4,7 +4,9 @@
 
 This document owns the terminology, evidence classes, spatial invariants, and
 safety meaning of the retained map workflow. It describes legacy meaning, not
-the complete target product model. Runtime, build, parser, and persistence flow
+the complete target product model. Current workflows are owned by the
+[application specification](../spec/index.md). Runtime, build, parser, and
+persistence flow
 are owned by [Legacy Map Build Architecture](../architecture/legacy-map-build.md).
 
 The Spatial Evidence domain model is defined in
@@ -70,22 +72,18 @@ Planning evidence distinguishes `StrefaPlanistyczna` and
 remain uncertain and require visual confirmation against the authoritative
 source.
 
-## Layer Semantics
+## Evidence Interpretation
 
-- parcels: selected or contextual cadastral geometry from ULDK;
-- zones and OUZ: planning proposal geometry from the configured GML snapshot;
-- ortho: aerial imagery preview;
-- EGiB: building and parcel-number raster preview;
-- land classes: KIEG raster preview of land-use contours and soil
-  classification contours, including markings such as `RIIIa`, `ŁIV`, `PsV`,
-  or non-agricultural land-use symbols where published by the county;
-- addresses: optional street/address raster preview;
-- power, water, sewer: indicative utility raster previews;
-- manual: user-authored points, lines, and areas with optional status and description.
+Parcel geometry is cadastral source evidence. Planning zones and OUZ represent
+features from the configured planning document. Imagery, cadastral markings,
+addresses, and utility rasters are indicative visual evidence; their pixels
+do not establish feature identity or analytical categories. Private manual
+geometries remain user intent.
 
-Candidate layers and their evidence/sourcing risks are evaluated in
+The [current layer catalogue and interactions](../spec/map-and-layers.md) belong
+to the functional specification. Candidate sources and sourcing risks remain in
 [Candidate Map Layers](../research/additional-map-layers.md).
 
-The land-class raster supports visual screening only. County KIEG coverage may
-be missing, incomplete, or differently current, and the displayed marking does
-not replace an official EGiB extract or competent cadastral interpretation.
+County land-class coverage may be missing, incomplete, or differently current.
+Displayed markings do not replace an official EGiB extract or competent
+cadastral interpretation.

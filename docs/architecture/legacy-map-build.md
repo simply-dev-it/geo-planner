@@ -3,7 +3,8 @@
 ## Status And Scope
 
 This document describes the current runtime and data flow of the retained
-Python/HTML legacy application. The replacement foundation and accepted target
+Python/HTML legacy application. Current user workflows, visible results, and
+limitations belong to the [application specification](../spec/index.md). The replacement foundation and accepted target
 boundaries are documented in
 [Target Product Architecture](target-product.md).
 

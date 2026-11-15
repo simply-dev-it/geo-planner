@@ -24,8 +24,8 @@ top:
 
 - the exact question and decision or requirement it informs;
 - status and last evidence-check date;
-- completed outputs linked to their durable requirement, domain, architecture,
-  or guideline owners;
+- completed outputs linked to their durable requirement, specification, domain,
+  architecture, or guideline owners;
 - unresolved questions;
 - the next decision, implementation slice, evidence change, or re-evaluation
   trigger that requires returning to the research.
@@ -45,6 +45,9 @@ Progress describes evidence and decision coverage, not implementation tasks.
 - Preserve material reasons for rejecting viable alternatives and state whether
   each is rejected, rejected for now, or deferred.
 - Give every deferred alternative a concrete return condition when one is known.
+- Keep the current functional description in the
+  [specification](specification-guide.md), retaining dated observations and
+  comparison evidence here only when needed for a named return condition.
 - Do not copy an accepted model into research after its durable owner records it;
   link to that owner and retain only evidence still needed for later work.
 

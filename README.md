@@ -51,6 +51,7 @@ artifacts, or `mise run build --all` to include the simulator and Storybook.
 
 ## Documentation
 
+- [Current application specification](docs/spec/index.md)
 - [Repository setup and commands](docs/guidelines/repository-guide.md)
 - [Target product architecture](docs/architecture/target-product.md)
 - [Acquisition and artifact flow](docs/architecture/acquisition-and-artifact.md)

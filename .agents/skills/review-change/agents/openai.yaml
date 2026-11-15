@@ -1,0 +1,4 @@
+interface:
+  display_name: "Change Review"
+  short_description: "Review local changes or pull requests and recommend fixes"
+  default_prompt: "Use $review-change to assess local changes or a pull request and recommend a bounded corrective batch."

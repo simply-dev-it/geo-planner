@@ -1,0 +1,4 @@
+interface:
+  display_name: "Create Pull Request"
+  short_description: "Check delivery readiness and create a pull request"
+  default_prompt: "Use $create-pr to check the completed change and open a pull request under the repository delivery rules."

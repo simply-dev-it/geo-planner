@@ -6,7 +6,8 @@ Architecture documents define how accepted product behavior is structured and
 operated: component responsibilities, dependencies, state ownership, runtime
 and data flow, persistence, failure recovery, security, and deployment
 boundaries. They describe current implementation or accepted target design;
-they are not product requirements, research comparisons, or delivery plans.
+shared boundaries with functional specification, requirements, research, and
+plans are defined by the [documentation guide](documentation-guide.md).
 
 Exact API shapes belong to an accepted contract artifact such as OpenAPI and
 its implementing slice. Do not preserve speculative endpoint tables in durable
@@ -61,5 +62,6 @@ flow stages are materially easier to assess graphically.
 - Are responsibilities, dependency direction, state ownership, and flow clear?
 - Are failure, cancellation, restart, migration, privacy, and security covered
   where applicable?
-- Does domain meaning remain in domain and observable behavior in requirements?
+- Does domain meaning remain in domain, current observable behavior in the
+  specification, and expected value and acceptance in requirements?
 - Do diagrams and prose describe the same model without speculative contracts?

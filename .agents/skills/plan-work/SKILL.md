@@ -1,22 +1,38 @@
 ---
 name: plan-work
-description: Plan non-trivial repository changes before implementation. Use when a request changes behavior, data contracts, architecture, integrations, portability, or multiple repository areas and needs an explicit proposal with decisions, risks, stages, verification, and acceptance criteria.
+description: Plan repository changes that need a material owner decision or staged acceptance, add a product capability, or materially change contracts, architecture, integrations, or safety behavior.
 ---
 
-# Protocol A: Planning
+# Planning
 
-## Primary Guides
+## Scope
 
-- `docs/guidelines/project-lifecycle.md` defines project structure, decision
-  gates, approval, progress, and closeout.
-- `docs/guidelines/engineering-guide.md` defines the technical, safety,
-  verification, and documentation standards applied to the proposal.
+Prepare a reviewable change proposal and maintain its accepted scope through delivery.
 
-1. Read every document routed for the affected area.
-2. Inspect implemented behavior and current worktree state. Separate facts, assumptions, and open decisions.
-3. Create one cohesive proposal under `docs/projects/` using `docs/guidelines/project-lifecycle.md`.
-   The plan may reference durable docs, but do not link another project plan and do not add inbound links from durable docs, root guidance, or skills.
-4. Include the problem, outcome, scope, non-goals, data/runtime flow, failure behavior, migration impact, stages, tests, acceptance criteria, and unresolved choices when applicable.
-5. Prefer reversible stages and preserve user data and external evidence. Flag network calls, destructive operations, and data regeneration separately.
-6. Keep the project `PROPOSED` until the owner approves it for implementation or explicitly requests planning and execution together for a named scope. The combined request lets it enter `APPROVED FOR IMPLEMENTATION`; ordinary reversible decisions stay inside that scope, but a newly discovered material owner decision still blocks dependent work until accepted. Editing, reviewing, or expanding a plan does not change its phase.
-7. Keep progress markers current during extended work. After acceptance and closeout, transfer lasting decisions, limitations, and safety boundaries to their durable domain, architecture, requirements, research, or guideline owners and remove the temporary proposal.
+## Inputs
+
+Read [references/planning.md](references/planning.md) for proposal content, design
+review, and a portable template. Apply repository-specific routing, status names,
+plan locations, and verification commands when they exist.
+
+Read relevant repository instructions and inspect implemented behavior and the
+worktree. Separate facts, assumptions, and open decisions.
+
+## Workflow
+
+1. Continue the active plan when one exists. Before creating a new plan in a Git
+   repository, create and switch to a dedicated branch based on its default
+   branch. Check the actual base and preserve existing worktree changes;
+   use a separate worktree or checkout if switching would disturb those changes.
+   Do not create the plan on the default branch. Then write one cohesive proposal
+   in the repository's plan location or the user-requested artifact.
+2. Make materially affected design surfaces reviewable before implementation.
+3. Implement only after the owner authorizes the scope, including a request to plan
+   and execute together. Pause only work dependent on a newly discovered material
+   owner decision outside that scope.
+
+## Verification And Handoff
+
+Keep progress and deviations current. After implementation, record actual
+behavior and verification. Close a temporary plan only after owner acceptance
+and transfer of lasting decisions to their durable owners.
