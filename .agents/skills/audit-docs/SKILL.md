@@ -20,6 +20,7 @@ and repository skills when present.
 ## Workflow
 
 ### Guardrails
+
 - Preserve user edits and sourced evidence. Do not delete an active project merely to reduce file count.
 - Never add a durable inbound link to a specific temporary project plan.
 - Treat line count as a signal, not a target. Clarity and ownership matter more than arbitrary brevity.

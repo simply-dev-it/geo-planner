@@ -19,7 +19,9 @@ or architecture area, and do not add unrelated work merely to make it larger.
 ## Inputs
 
 1. For a pull request, identify base and head and inspect the complete merge-base diff.
-2. For local changes, inspect staged and unstaged diffs and read untracked files.
+2. For local changes, establish the requested scope and its baseline. Inspect all
+   commits in that scope against the baseline, as well as staged and unstaged
+   diffs and untracked files. If the baseline or scope is unclear, ask the owner.
 3. For material rewrites of durable documents, inspect a word-level diff to identify
    lost decisions, provenance, evidence, or constraints.
 4. Read current review comments, when present, and distinguish them from unrelated
