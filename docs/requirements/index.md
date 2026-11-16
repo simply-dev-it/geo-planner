@@ -51,6 +51,13 @@ their concrete stories pass the discovery quality gate.
 
 <!-- requirements-summary:end -->
 
+## Supporting Delivery Queue
+
+The [backend API implementation queue](backend-api-implementation-queue.md)
+tracks accepted frontend API slices awaiting manual backend implementation.
+It is technical delivery tracking, not a product requirement, and is excluded
+from the portfolio totals above.
+
 ## Portfolio Rules
 
 - Application-area files own requirement content and their local indexes.
