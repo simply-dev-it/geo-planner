@@ -3,7 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Nowy projekt — Geo Planner · propozycja</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>Nowy projekt — interaktywna makieta · Geo Planner</title>
   <style>
     :root { color-scheme: light; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #23332f; background: #f4f6f3; font-synthesis: none; }
     * { box-sizing: border-box; }
@@ -104,141 +105,696 @@
       .preview-head { padding: 17px; }
       .legend, .preview-info { padding-left: 17px; padding-right: 17px; }
     }
+    :root { color: #23332f; background: #f3f6f2; }
+    body { font-size: 14px; }
+    .topbar { min-height: 56px; padding: 0 28px; }
+    .notice { padding: 8px 28px; }
+    main { max-width: 1600px; padding: 18px 28px 30px; }
+    .crumb { margin-bottom: 10px; }
+    .heading { margin-bottom: 15px; }
+    .heading h1 { margin-bottom: 3px; }
+    .card { border-radius: 12px; }
+    .toolbar { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; padding: 16px 18px; margin-bottom: 14px; }
+    .search-field { flex: 1 1 340px; min-width: 210px; }
+    .search-field label, .project-name label, .parcel-add label, .size-field label { display: block; margin: 0 0 5px; }
+    .search-row { display: flex; gap: 8px; }
+    .search-row input { min-width: 0; }
+    .search-row button, .toolbar button, .controls button, .map-tools button, .scenario-buttons button, .candidate button, .selected-item button, .move-controls button { border: 1px solid #cbdad0; border-radius: 7px; padding: 8px 11px; background: #fff; color: #26513f; font-weight: 700; }
+    .search-row button, .primary { background: #246b50; border-color: #246b50; color: #fff; }
+    .toolbar .hint { margin: 5px 0 0; }
+    .quick-search { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; flex: 0 1 auto; }
+    .quick-search span { color: #708177; font-size: 11px; }
+    .quick-search button { padding: 6px 9px; font-size: 11px; }
+    .candidate-results { flex: 1 0 100%; display: grid; gap: 6px; }
+    .candidate { display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 1px solid #dfe8df; border-radius: 7px; padding: 8px 10px; background: #f8faf8; }
+    .candidate small { display: block; color: #708177; }
+    .workspace { grid-template-columns: minmax(290px, 350px) minmax(0, 1fr); gap: 14px; }
+    .controls { padding: 18px; }
+    .controls h2 { margin-bottom: 5px; }
+    .controls .intro { margin: 0 0 16px; }
+    .controls .field { margin-bottom: 13px; }
+    .project-name { margin-bottom: 13px; }
+    .parcel-add-row { display: flex; gap: 7px; }
+    .parcel-add-row input { min-width: 0; }
+    .selected-list { display: grid; gap: 5px; padding: 0; margin: 8px 0 0; list-style: none; }
+    .selected-item { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 6px 8px; border-radius: 6px; background: #eef5ef; color: #315746; font-size: 11px; overflow-wrap: anywhere; }
+    .selected-item button { flex-shrink: 0; padding: 3px 7px; font-size: 10px; }
+    .area-summary { margin: 9px 0; padding: 9px 10px; border-radius: 7px; background: #f1f5ef; color: #506b5c; font-size: 11px; }
+    .area-summary.warning { background: #fff3e1; color: #815516; }
+    .area-editor { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0; }
+    .size-field input { padding: 7px 8px; }
+    .size-field label, .move-title { font-size: 11px; }
+    .move-editor { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 10px 0; }
+    .move-controls { display: grid; grid-template-columns: repeat(3, 32px); grid-template-rows: repeat(2, 30px); gap: 3px; }
+    .move-controls button { padding: 2px; font-size: 13px; }
+    .move-controls button:first-child { grid-column: 2; }
+    .move-controls button:nth-child(2) { grid-column: 1; grid-row: 2; }
+    .move-controls button:nth-child(3) { grid-column: 2; grid-row: 2; }
+    .move-controls button:nth-child(4) { grid-column: 3; grid-row: 2; }
+    .mode-row { display: flex; flex-wrap: wrap; gap: 7px; margin: 12px 0; }
+    .mode-row .active { background: #fff0d9; border-color: #d49843; color: #754d16; }
+    .form-actions { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; }
+    .form-actions button { padding: 9px 11px; }
+    .button-primary { background: #246b50 !important; color: white !important; border-color: #246b50 !important; }
+    .button-create { background: #e8f2e9 !important; border-color: #d0e3d3 !important; }
+    .button-create:disabled { opacity: .48; cursor: not-allowed; }
+    .map-card { overflow: hidden; }
+    .map-header { display: flex; align-items: start; justify-content: space-between; gap: 10px; padding: 16px 18px 12px; }
+    .map-header h2 { margin: 0; }
+    .map-header p { margin: 4px 0 0; color: #708177; font-size: 11px; }
+    .map-status { flex-shrink: 0; padding: 5px 9px; border-radius: 999px; background: #edf3ee; color: #536f5d; font-size: 10px; font-weight: 750; }
+    .map-status.ready { background: #e1f2e5; color: #276843; }
+    .map-status.alert { background: #fff0da; color: #805117; }
+    .map-tools { display: flex; align-items: center; gap: 5px; padding: 0 14px 10px; }
+    .map-tools button { padding: 5px 9px; font-size: 11px; }
+    .map-tools .spacer { flex: 1; }
+    .map-canvas { display: block; width: 100%; height: 465px; background: #e7eee6; border-top: 1px solid #dfe8df; border-bottom: 1px solid #dfe8df; touch-action: none; cursor: grab; }
+    .map-canvas:active { cursor: grabbing; }
+    .map-canvas.draw-mode { cursor: crosshair; }
+    .land { fill: #f4f4e8; stroke: #91aa96; stroke-width: 3; }
+    .region-line { fill: none; stroke: #d1dcca; stroke-width: 2; stroke-dasharray: 4 5; }
+    .road { fill: none; stroke: #e6c99c; stroke-width: 9; stroke-linecap: round; }
+    .road-center { fill: none; stroke: #fffaf0; stroke-width: 3; stroke-dasharray: 8 8; }
+    .water { fill: none; stroke: #b7d7dc; stroke-width: 15; stroke-linecap: round; }
+    .place-dot { fill: #587d68; stroke: white; stroke-width: 4; cursor: pointer; }
+    .place-label { fill: #52695b; font-size: 13px; font-weight: 650; pointer-events: none; }
+    .parcel-shape { fill: #dce8cc; stroke: #769773; stroke-width: 2.5; cursor: pointer; }
+    .parcel-shape.selected { fill: #8fc5a1; stroke: #1c6a4b; stroke-width: 4; }
+    .parcel-label { fill: #315d43; font-size: 12px; font-weight: 750; pointer-events: none; }
+    .working-area { fill: #e8a84a; fill-opacity: .12; stroke: #c17a24; stroke-width: 4; stroke-dasharray: 10 7; cursor: move; }
+    .working-area:focus { stroke: #7a4812; stroke-width: 6; outline: none; }
+    .area-handle { fill: white; stroke: #9c621d; stroke-width: 3; cursor: nwse-resize; }
+    .area-handle[data-handle="n"], .area-handle[data-handle="s"] { cursor: ns-resize; }
+    .area-handle[data-handle="e"], .area-handle[data-handle="w"] { cursor: ew-resize; }
+    .area-handle[data-handle="ne"], .area-handle[data-handle="sw"] { cursor: nesw-resize; }
+    .map-label-pill { fill: #ffffffed; stroke: #dce6da; stroke-width: 1; }
+    .map-note { fill: #526b5c; font-size: 11px; font-weight: 750; }
+    .map-feedback { padding: 9px 14px; border-bottom: 1px solid #edf1ed; color: #526a5c; font-size: 11px; }
+    .map-feedback.warning { background: #fff6e8; color: #795315; }
+    .legend { padding: 10px 16px; gap: 8px 16px; font-size: 10px; }
+    .legend .parcel-key { background: #8fc5a1; border-color: #1c6a4b; }
+    .legend .area-key { background: #f3d9ac; border: 2px dashed #c17a24; }
+    .map-meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 12px 16px 14px; }
+    .map-meta div { min-width: 0; }
+    .map-meta b { display: block; color: #7a8a7f; font-size: 9px; letter-spacing: .06em; text-transform: uppercase; }
+    .map-meta span { color: #455e4d; font-size: 10px; }
+    .warning-note { padding: 0 16px 13px; margin: 0; color: #708177; font-size: 10px; }
+    .feedback { margin: 10px 0; padding: 9px 10px; border-radius: 7px; background: #fff4e5; border: 1px solid #f0d7b4; color: #77501d; font-size: 11px; }
+    .feedback.error { background: #fff1ee; border-color: #f0d1cb; color: #883c30; }
+    .feedback.success { background: #edf7ee; border-color: #cfe6d2; color: #285d3f; }
+    .scenario { border-top: 1px solid #edf1ed; margin-top: 14px; padding-top: 12px; color: #5e7568; font-size: 11px; }
+    .scenario summary { font-size: 11px; }
+    .scenario p { margin: 6px 0; }
+    .scenario-buttons { display: flex; flex-wrap: wrap; gap: 5px; }
+    .scenario-buttons button { padding: 5px 7px; font-size: 10px; }
+    [hidden] { display: none !important; }
+    @media (max-width: 760px) {
+      .topbar { padding: 0 15px; min-height: 52px; }
+      .notice { padding: 7px 15px; font-size: 10px; }
+      main { padding: 14px 12px 24px; }
+      .heading { align-items: start; margin-bottom: 10px; }
+      .heading h1 { font-size: 22px; }
+      .heading p { font-size: 11px; }
+      .step { font-size: 0; }
+      .step b { font-size: 11px; margin-right: 0; }
+      .toolbar { gap: 8px; padding: 11px; margin-bottom: 10px; }
+      .search-field { flex-basis: 100%; }
+      .quick-search { gap: 4px; }
+      .quick-search span { flex-basis: 100%; }
+      .workspace { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+      .map-card { grid-row: 1; }
+      .controls { grid-row: 2; padding: 15px; }
+      .map-header { padding: 12px 13px 8px; }
+      .map-tools { padding: 0 10px 8px; }
+      .map-canvas { height: 275px; }
+      .map-meta { grid-template-columns: 1fr 1fr; padding: 10px 12px; }
+      .warning-note { padding: 0 12px 11px; }
+      .legend { padding: 9px 12px; gap: 7px 10px; }
+      .map-feedback { padding: 8px 11px; }
+      .scenario { margin-top: 11px; }
+    }
   </style>
 </head>
 <body>
   <header class="topbar">
     <div class="brand-mark" aria-hidden="true">⌁</div><div class="brand">Geo Planner</div>
     <div class="top-divider" aria-hidden="true"></div><div class="top-context">Przestrzeń projektowa</div>
-    <div class="demo-badge">PROPOZYCJA · DEMO</div>
+    <div class="demo-badge">MAKIETA · PROPOZYCJA</div>
   </header>
-  <div class="notice"><strong>Makieta poglądowa</strong> · Fikcyjne dane i schematyczna geometria. Nic nie jest pobierane ani zapisywane.</div>
+  <div class="notice"><strong>Offline · dane fikcyjne.</strong> Mapa jest schematem, nie odwzorowuje prawdziwej geografii. Nic nie jest pobierane ani zapisywane.</div>
   <main>
     <div class="crumb">Projekty <span aria-hidden="true">/</span> Nowy projekt</div>
-    <div class="heading"><div><h1>Utwórz projekt</h1><p>Zacznij od działek, które chcesz poznać.</p></div><div class="step"><b>1</b> Obszar projektu</div></div>
+    <div class="heading"><div><h1>Wybierz obszar projektu</h1><p>Przesuń mapę albo wyszukaj miejsce. Działki możesz dodać, ale nie są wymagane.</p></div><div class="step"><b>1</b> Obszar roboczy</div></div>
+
+    <section class="card toolbar" aria-label="Wyszukiwanie miejsca">
+      <form class="search-field" id="search-form" role="search">
+        <label for="search-query">Szukaj województwa, miejscowości, ulicy lub działki</label>
+        <div class="search-row"><input id="search-query" autocomplete="off" placeholder="np. Nowa Przystań lub numer działki" aria-describedby="search-hint"><button type="submit">Szukaj</button></div>
+        <p class="hint" id="search-hint">Wybierz wynik, aby przesunąć mapę. Przy niejednoznacznym adresie wskaż właściwy.</p>
+      </form>
+      <div class="quick-search" aria-label="Przykładowe zapytania">
+        <span>Przykłady:</span><button type="button" data-query="Województwo Północne">Województwo</button><button type="button" data-query="Nowa Przystań">Miejscowość</button><button type="button" data-query="ul. Leśna">Niejednoznaczna ulica</button>
+      </div>
+      <div class="candidate-results" id="candidate-results" role="region" aria-label="Wyniki wyszukiwania" aria-live="polite" hidden></div>
+    </section>
+
     <div class="workspace">
-      <section class="card form-card" aria-labelledby="form-title">
-        <p class="section-label">Obszar projektu</p>
-        <h2 id="form-title">Wybierz działki</h2>
-        <p class="intro">Podaj identyfikatory, a następnie sprawdź proponowany obszar.</p>
-        <div id="feedback" class="feedback" role="status" aria-live="polite" hidden></div>
-        <form id="project-form" novalidate>
-          <div class="field"><label for="name">Nazwa projektu</label><input id="name" autocomplete="off" placeholder="np. Działki przy lesie" aria-describedby="name-hint"><p class="hint" id="name-hint">Nazwa nadana przez Ciebie.</p></div>
-          <div class="field"><label for="parcels">Pełne identyfikatory działek</label><textarea id="parcels" spellcheck="false" placeholder="Jeden identyfikator w każdym wierszu" aria-describedby="parcel-hint"></textarea><p class="hint" id="parcel-hint">Od 1 do 100 identyfikatorów; każdy w osobnym wierszu.</p></div>
-          <div class="field"><label for="buffer">Otoczenie działek</label><div class="buffer-row"><input id="buffer" type="number" min="0" max="500" step="any" value="100" aria-describedby="buffer-hint"><span>metrów bufora</span></div><p class="hint" id="buffer-hint">Od 0 do 500 m. Domyślnie 100 m.</p></div>
-          <div class="actions"><button class="button primary" type="submit">Pokaż podgląd <span aria-hidden="true">→</span></button><button class="button save" type="button" id="save" disabled>Zapisz projekt</button></div>
+      <section class="card controls" aria-labelledby="project-title">
+        <p class="section-label">Utworzenie projektu</p>
+        <h2 id="project-title">Nazwa i wybór</h2>
+        <p class="intro">Zacznij od dowolnego obszaru. Granice działek pozostają bez zmian.</p>
+        <div class="project-name"><label for="project-name">Nazwa projektu</label><input id="project-name" autocomplete="off" placeholder="np. Teren przy lesie"><p class="hint">Możesz utworzyć projekt bez działek.</p></div>
+        <form id="parcel-form" class="parcel-add">
+          <label for="parcel-id">Dodaj działkę po pełnym identyfikatorze</label>
+          <div class="parcel-add-row"><input id="parcel-id" autocomplete="off" placeholder="np. 000000_0.0000.1/1"><button type="submit">Dodaj</button></div>
         </form>
-        <details class="scenario"><summary>Wypróbuj scenariusze makiety</summary><p>Przykłady są fikcyjne. Wybór wypełnia formularz i pokazuje dany stan.</p><div class="scenario-buttons"><button type="button" data-demo="empty">Pusty</button><button type="button" data-demo="preview">Poprawny podgląd</button><button type="button" data-demo="invalid">Niepoprawny</button><button type="button" data-demo="partial">Niepełny wynik</button><button type="button" data-demo="budget">Przekroczony limit</button><button type="button" data-demo="stale">Nieaktualny</button><button type="button" data-demo="uncertain">Niepewny zapis</button><button type="button" data-demo="saved">Przykładowy szczegół</button></div></details>
-      </section>
-      <section class="card preview-card" aria-labelledby="preview-title">
-        <div class="preview-head"><div><p class="section-label">Sprawdź przed zapisaniem</p><h2 id="preview-title">Podgląd obszaru</h2><p>Działki, otoczenie i granica pobierania danych</p></div><span class="status" id="status">Brak podglądu</span></div>
-        <div class="map" id="map" role="img" aria-label="Brak podglądu. Schematyczne tło, nie mapa rzeczywistego terenu.">
-          <svg viewBox="0 0 800 360" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-            <rect width="800" height="360" fill="#e9f0e7"/>
-            <path d="M0 80 C155 107 260 40 400 74 S640 125 800 55 M0 260 C155 215 242 288 398 256 S620 210 800 260" fill="none" stroke="#d7e3d6" stroke-width="34"/>
-            <path d="M0 80 C155 107 260 40 400 74 S640 125 800 55 M0 260 C155 215 242 288 398 256 S620 210 800 260" fill="none" stroke="#f6f8f1" stroke-width="18"/>
-            <g fill="none" stroke="#ccdccc" stroke-width="1"><path d="M32 0 L95 360 M154 0 L205 360 M585 0 L635 360 M705 0 L760 360"/><path d="M0 150 L800 150 M0 315 L800 315"/></g>
-            <g id="geometry" hidden>
-              <rect x="160" y="35" width="480" height="290" fill="none" stroke="#cf8d3d" stroke-width="3" stroke-dasharray="9 7"/>
-              <path d="M253 74 Q225 84 219 123 L198 235 Q194 267 228 284 L510 288 Q563 283 576 249 L600 145 Q607 104 565 91 L457 69 Z" fill="#cfe4c2" fill-opacity=".87" stroke="#94b88a" stroke-width="2"/>
-              <path d="M291 117 L394 111 L381 247 L275 239 Z" fill="#87c5a0" stroke="#287653" stroke-width="3"/>
-              <path d="M394 111 L510 131 L492 250 L381 247 Z" fill="#a4d5b0" stroke="#287653" stroke-width="3"/>
-              <path d="M291 117 L394 111 L510 131 L492 250 L381 247 L275 239 Z" fill="none" stroke="#185942" stroke-width="4" stroke-dasharray="7 4"/>
-              <text x="315" y="183" fill="#215c41" font-size="13" font-weight="700">1/1</text><text x="421" y="187" fill="#215c41" font-size="13" font-weight="700">1/2</text>
-            </g>
-          </svg>
-          <div class="map-label">SCHEMAT · NIE MAPA</div><div class="map-stale" id="map-stale" hidden>NIEAKTUALNY PODGLĄD</div><div class="map-caption">Bez skali i współrzędnych</div>
-          <div class="map-empty" id="map-empty"><div><strong id="empty-title">Tu pojawi się podgląd</strong><span id="empty-hint">Wprowadź dane projektu i wybierz „Pokaż podgląd”.</span></div></div>
+        <p class="hint" id="selected-count" aria-live="polite">Nie wybrano działek</p>
+        <ul class="selected-list" id="selected-list" aria-label="Wybrane działki"></ul>
+        <div id="area-summary" class="area-summary" role="status" aria-live="polite">Narysuj prostokąt na mapie albo ustaw go przykładowo.</div>
+        <div class="mode-row"><button class="button" id="draw-toggle" type="button" aria-pressed="false">Rysuj obszar na mapie</button><button class="button" id="sample-area" type="button">Ustaw obszar przykładowy</button></div>
+        <div class="area-editor" aria-label="Dostępna edycja rozmiaru obszaru">
+          <div class="size-field"><label for="area-width">Szerokość obszaru</label><input id="area-width" type="number" min="20" max="420" step="10" aria-describedby="size-hint"></div>
+          <div class="size-field"><label for="area-height">Wysokość obszaru</label><input id="area-height" type="number" min="20" max="320" step="10" aria-describedby="size-hint"></div>
         </div>
-        <div class="legend" aria-label="Legenda schematu"><span><i class="swatch" aria-hidden="true"></i> Działki</span><span><i class="swatch union" aria-hidden="true"></i> Suma działek</span><span><i class="swatch buffer" aria-hidden="true"></i> Bufor</span><span><i class="swatch bbox" aria-hidden="true"></i> Granica pobierania (bbox)</span></div>
-        <div class="preview-info"><div><span class="info-label">Układ projektu</span><span class="info-value" id="crs">—</span></div><div><span class="info-label">Pochodzenie geometrii</span><span class="info-value">Fikcyjny przykład · nie ULDK</span></div><p class="safety">Podgląd nie potwierdza granic ani praw do nieruchomości. Brak rzeczywistej daty źródła i pokrycia; nie używaj do decyzji.</p></div>
+        <p class="hint" id="size-hint">Jednostki wyłącznie schematyczne, nie metry.</p>
+        <div class="move-editor"><div><strong class="move-title">Przesuń obszar (alternatywa dla przeciągania)</strong><p class="hint">Na mapie możesz też użyć strzałek klawiatury; Shift zmienia rozmiar.</p></div><div class="move-controls" aria-label="Przesuwanie obszaru">
+          <button type="button" data-move="up" aria-label="Przesuń w górę">↑</button><button type="button" data-move="left" aria-label="Przesuń w lewo">←</button><button type="button" data-move="down" aria-label="Przesuń w dół">↓</button><button type="button" data-move="right" aria-label="Przesuń w prawo">→</button>
+        </div></div>
+        <div class="feedback" id="feedback" role="status" aria-live="polite" hidden></div>
+        <div class="form-actions"><button class="button button-primary" id="preview-button" type="button">Sprawdź podgląd</button><button class="button button-create" id="create-button" type="button" disabled>Potwierdź i utwórz</button></div>
+        <details class="scenario"><summary>Wypróbuj stany makiety</summary><p>Scenariusze są lokalne i nie wykonują żądań.</p><div class="scenario-buttons">
+          <button type="button" data-demo="empty">Pusty</button><button type="button" data-demo="preview">Podgląd z działką</button><button type="button" data-demo="no-parcel">Podgląd bez działki</button><button type="button" data-demo="ambiguous">Niejednoznaczny wynik</button><button type="button" data-demo="invalid">Błędne dane</button><button type="button" data-demo="partial">Niepełny wynik</button><button type="button" data-demo="budget">Limit</button><button type="button" data-demo="offline">Niedostępna mapa</button><button type="button" data-demo="stale">Nieaktualny podgląd</button><button type="button" data-demo="uncertain">Niepewny zapis</button><button type="button" data-demo="detail">Przykładowy projekt</button>
+        </div></details>
+      </section>
+
+      <section class="card map-card" aria-labelledby="map-title">
+        <div class="map-header"><div><p class="section-label">Nawigacja i edycja</p><h2 id="map-title">Mapa Polski · schemat</h2><p>Przeciągnij tło, aby przesunąć. Wybierz działkę albo narysuj obszar.</p></div><span class="map-status" id="map-status">Obszar do wyboru</span></div>
+        <div class="map-tools"><button type="button" id="zoom-out" aria-label="Pomniejsz mapę">−</button><button type="button" id="zoom-in" aria-label="Powiększ mapę">+</button><button type="button" id="reset-map">Pokaż całą Polskę</button><span class="spacer"></span><span class="hint">Orientacyjny schemat</span></div>
+        <svg class="map-canvas" id="map-canvas" viewBox="0 0 900 560" role="group" aria-label="Schematyczna mapa Polski. Można ją przesuwać i przybliżać; zaznaczenie działek jest fikcyjne." aria-describedby="map-help">
+          <title>Schemat mapy i obszaru roboczego</title>
+          <desc id="map-help">Mapa nie ma skali ani współrzędnych. Zaznacz prostokąt przeciągając po mapie, przeciągnij jego uchwyty lub użyj pól i klawiszy strzałek.</desc>
+          <g id="map-content">
+            <path class="land" d="M148 95 241 74 320 91 391 62 489 83 553 73 635 111 720 101 777 163 754 222 782 282 744 340 767 407 706 454 636 441 580 486 514 468 447 496 377 472 306 490 260 448 193 451 163 395 121 357 143 298 119 239 148 179Z"/>
+            <path class="region-line" d="M280 88 298 185 263 267 306 347 260 448 M389 67 402 164 365 250 402 344 377 472 M492 84 475 171 512 257 474 356 514 468 M634 111 606 189 648 268 612 356 636 441 M143 239 260 252 365 250 475 257 610 253 765 222 M128 356 260 347 402 344 474 356 614 356 752 340"/>
+            <path class="water" d="M140 183 Q250 201 298 157 T438 147 Q494 149 536 194 T681 210"/>
+            <path class="road" d="M197 421 Q277 367 341 345 T476 275 Q564 224 705 168 M220 132 Q310 200 379 245 T510 347 Q586 402 711 418"/>
+            <path class="road-center" d="M197 421 Q277 367 341 345 T476 275 Q564 224 705 168 M220 132 Q310 200 379 245 T510 347 Q586 402 711 418"/>
+            <text class="place-label" x="188" y="151">Woj. Północne</text><text class="place-label" x="569" y="127">Zielona Dolina</text><text class="place-label" x="229" y="404">Stare Pole</text>
+            <rect id="working-area" class="working-area" x="345" y="205" width="300" height="205" rx="2" tabindex="0" role="group" aria-label="Obszar roboczy. Użyj strzałek, aby przesunąć; Shift i strzałki zmieniają rozmiar." hidden/>
+            <circle class="place-dot" cx="463" cy="282" r="9" data-place="town" tabindex="0" role="button" aria-label="Przesuń mapę do miejscowości Nowa Przystań"/><text class="place-label" x="477" y="279">Nowa Przystań</text>
+            <circle class="place-dot" cx="650" cy="378" r="8" data-place="other-town" tabindex="0" role="button" aria-label="Przesuń mapę do miejscowości Zielona Dolina"/><text class="place-label" x="663" y="383">Zielona Dolina</text>
+            <polygon class="parcel-shape" data-parcel="000000_0.0000.1/1" data-box="385,245,518,360" points="385,262 445,238 506,255 518,334 455,359 397,338" tabindex="0" role="button" aria-label="Wybierz przykładową działkę 1/1"/><text class="parcel-label" x="429" y="306">1/1</text>
+            <polygon class="parcel-shape" data-parcel="000000_0.0000.1/2" data-box="518,255,620,368" points="506,255 565,247 607,281 620,349 556,368 518,334" tabindex="0" role="button" aria-label="Wybierz przykładową działkę 1/2"/><text class="parcel-label" x="554" y="312">1/2</text>
+            <g id="handle-layer" aria-hidden="true"></g>
+            <g id="map-overlay" visibility="hidden"><rect class="map-label-pill" x="255" y="244" width="390" height="70" rx="9"/><text class="map-note" x="450" y="274" text-anchor="middle">Przykładowa mapa jest niedostępna</text><text class="map-note" x="450" y="294" text-anchor="middle">Pozostałe scenariusze działają lokalnie</text></g>
+            <g><rect class="map-label-pill" x="20" y="18" width="205" height="30" rx="6"/><text class="map-note" x="33" y="38">DANE FIKCYJNE · BEZ SKALI</text></g>
+          </g>
+        </svg>
+        <div class="map-feedback" id="map-feedback" role="status" aria-live="polite">Obszar można wyznaczyć bez wyboru działki.</div>
+        <div class="legend" aria-label="Legenda schematu"><span><i class="swatch parcel-key" aria-hidden="true"></i> Wybrana działka (granica źródłowa)</span><span><i class="swatch area-key" aria-hidden="true"></i> Edytowalny obszar roboczy</span><span>● Miejscowość do wyszukania</span></div>
+        <div class="map-meta"><div><b>Układ współrzędnych</b><span>Nie dotyczy · schemat</span></div><div><b>Źródło i data</b><span>Fikcyjne dane lokalne · nie ULDK</span></div><div><b>Warstwa tła</b><span>Brak dostawcy · bez sieci</span></div></div>
+        <p class="warning-note">Nie przedstawia rzeczywistej geografii, granic ewidencyjnych ani legalnego położenia. Podgląd nie zastępuje walidacji backendu.</p>
       </section>
     </div>
   </main>
   <script>
     (() => {
-      const form = document.getElementById('project-form');
-      const name = document.getElementById('name');
-      const parcels = document.getElementById('parcels');
-      const buffer = document.getElementById('buffer');
-      const feedback = document.getElementById('feedback');
-      const save = document.getElementById('save');
-      const status = document.getElementById('status');
-      const geometry = document.getElementById('geometry');
-      const empty = document.getElementById('map-empty');
-      const map = document.getElementById('map');
-      const mapStale = document.getElementById('map-stale');
-      const crs = document.getElementById('crs');
-      const ids = ['000000_0.0000.1/1', '000000_0.0000.1/2'];
-      const missing = '000000_0.0000.9/9';
-      const distant = '000000_0.0000.8/8';
-      let state = 'empty';
+      const parcelIds = ['000000_0.0000.1/1', '000000_0.0000.1/2'];
+      const area = document.getElementById('working-area');
+      const map = document.getElementById('map-canvas');
+      const handleLayer = document.getElementById('handle-layer');
+      const selectedIds = new Set();
+      const view = { x: 0, y: 0, width: 900, height: 560 };
+      let rectangle = null;
+      let previewReady = false;
+      let drawMode = false;
+      let areaEdited = false;
+      let scenarioIssue = '';
+      let currentState = 'empty';
+      let drag = null;
+      let mapUnavailable = false;
 
-      function setState(next, message = '', kind = '') {
-        state = next;
-        const visible = ['preview', 'stale', 'uncertain', 'detail'].includes(next);
-        geometry.toggleAttribute('hidden', !visible);
-        empty.hidden = visible;
-        document.getElementById('empty-title').textContent = next === 'empty' ? 'Tu pojawi się podgląd' : 'Podgląd niedostępny';
-        document.getElementById('empty-hint').textContent = next === 'empty' ? 'Wprowadź dane projektu i wybierz „Pokaż podgląd”.' : 'Sprawdź komunikat i popraw dane projektu.';
-        mapStale.hidden = next !== 'stale';
-        map.setAttribute('aria-label', visible ? (next === 'stale' ? 'Nieaktualny podgląd. ' : '') + 'Schemat: zielone działki i ich suma, jaśniejsze otoczenie oraz pomarańczowa przerywana granica obszaru pobierania. Dane fikcyjne, nie mapa rzeczywistego terenu.' : 'Brak podglądu. Schematyczne tło, nie mapa rzeczywistego terenu.');
-        crs.textContent = visible ? 'EPSG:2180 · przykładowy' : '—';
-        save.disabled = next !== 'preview';
-        const labels = { empty: 'Brak podglądu', preview: 'Gotowy do sprawdzenia', stale: 'Nieaktualny', invalid: 'Wymaga poprawy', partial: 'Niepełny wynik', budget: 'Poza limitem', uncertain: 'Wynik niepewny', detail: 'Przykładowy szczegół' };
-        status.textContent = labels[next];
-        status.className = 'status' + (next === 'preview' || next === 'detail' ? ' ready' : next === 'invalid' || next === 'partial' || next === 'budget' ? ' error' : next === 'stale' || next === 'uncertain' ? ' warning' : '');
-        feedback.hidden = !message;
+      const $ = (id) => document.getElementById(id);
+      const nameInput = $('project-name');
+      const feedback = $('feedback');
+      const createButton = $('create-button');
+      const candidateResults = $('candidate-results');
+
+      function setFeedback(message = '', kind = '') {
+        feedback.textContent = message;
         feedback.className = 'feedback' + (kind ? ' ' + kind : '');
-        feedback.replaceChildren();
-        if (message) {
-          const text = document.createElement('p');
-          text.textContent = message;
-          feedback.append(text);
+        feedback.hidden = !message;
+      }
+
+      function announceChange(message) {
+        if (previewReady) {
+          previewReady = false;
+          currentState = 'stale';
+          setFeedback('Dane lub obszar zmieniono po podglądzie. Poprzedni podgląd jest nieaktualny; sprawdź go ponownie.');
+        } else if (currentState === 'detail' || currentState === 'uncertain') {
+          currentState = 'editing';
+          setFeedback('Zmiana danych rozpoczęła nową wersję roboczą. Przykładowy wynik nie odpowiada już formularzowi.');
+        } else if (message) {
+          setFeedback(message);
         }
-        if (next === 'uncertain') {
-          const check = document.createElement('button');
-          check.type = 'button';
-          check.className = 'button';
-          check.textContent = 'Sprawdź przykładowy wynik';
-          check.addEventListener('click', () => setState('detail', 'Przykładowy szczegół projektu po ponownym otwarciu. To tylko ilustracja — w tej makiecie nie istnieje zapisany projekt.', 'success'));
-          feedback.append(check);
+        render();
+      }
+
+      function setView(next) {
+        Object.assign(view, next);
+        map.setAttribute('viewBox', `${view.x} ${view.y} ${view.width} ${view.height}`);
+      }
+
+      function svgPoint(event) {
+        const point = map.createSVGPoint();
+        point.x = event.clientX;
+        point.y = event.clientY;
+        return point.matrixTransform(map.getScreenCTM().inverse());
+      }
+
+      function suggestArea(parcelId) {
+        if (areaEdited) return;
+        rectangle = parcelId === parcelIds[1]
+          ? { x: 474, y: 224, width: 270, height: 190 }
+          : { x: 328, y: 198, width: 280, height: 195 };
+        render();
+      }
+
+      function toggleParcel(parcelId) {
+        if (selectedIds.has(parcelId)) {
+          selectedIds.delete(parcelId);
+          announceChange('Usunięto działkę z wyboru; jej granica źródłowa nie została zmieniona.');
+          return;
+        }
+        if (selectedIds.size >= 100) {
+          setFeedback('Limit makiety to 100 działek.');
+          return;
+        }
+        selectedIds.add(parcelId);
+        suggestArea(parcelId);
+        announceChange('Dodano fikcyjną działkę. Proponowany prostokąt można dalej edytować.');
+      }
+
+      function areaWarning() {
+        if (!rectangle || selectedIds.size === 0) return 'Obszar można wyznaczyć bez wyboru działki.';
+        for (const shape of document.querySelectorAll('[data-parcel]')) {
+          if (!selectedIds.has(shape.dataset.parcel)) continue;
+          const [left, top, right, bottom] = shape.dataset.box.split(',').map(Number);
+          const intersects = rectangle.x < right && rectangle.x + rectangle.width > left && rectangle.y < bottom && rectangle.y + rectangle.height > top;
+          const contains = rectangle.x <= left && rectangle.y <= top && rectangle.x + rectangle.width >= right && rectangle.y + rectangle.height >= bottom;
+          if (!intersects) return 'Wybrana działka leży poza obszarem roboczym; jej granica pozostaje niezmieniona.';
+          if (!contains) return 'Obszar przecina tylko część wybranej działki; jej granica źródłowa pozostaje niezmieniona.';
+        }
+        return 'Wybrane działki i obszar są pokazane oddzielnie. Geometria jest fikcyjna.';
+      }
+
+      function render() {
+        if (rectangle) area.removeAttribute('hidden');
+        else area.setAttribute('hidden', '');
+        if (rectangle) {
+          area.setAttribute('x', rectangle.x);
+          area.setAttribute('y', rectangle.y);
+          area.setAttribute('width', rectangle.width);
+          area.setAttribute('height', rectangle.height);
+          area.setAttribute('aria-valuetext', `Szerokość ${rectangle.width}, wysokość ${rectangle.height} jednostek schematu`);
+          $('area-width').value = rectangle.width;
+          $('area-height').value = rectangle.height;
+        } else {
+          $('area-width').value = '';
+          $('area-height').value = '';
+        }
+        handleLayer.replaceChildren();
+        if (rectangle) {
+          const points = {
+            nw: [rectangle.x, rectangle.y], n: [rectangle.x + rectangle.width / 2, rectangle.y], ne: [rectangle.x + rectangle.width, rectangle.y],
+            e: [rectangle.x + rectangle.width, rectangle.y + rectangle.height / 2], se: [rectangle.x + rectangle.width, rectangle.y + rectangle.height],
+            s: [rectangle.x + rectangle.width / 2, rectangle.y + rectangle.height], sw: [rectangle.x, rectangle.y + rectangle.height], w: [rectangle.x, rectangle.y + rectangle.height / 2],
+          };
+          for (const [direction, [cx, cy]] of Object.entries(points)) {
+            const handle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            handle.classList.add('area-handle');
+            handle.setAttribute('cx', cx);
+            handle.setAttribute('cy', cy);
+            handle.setAttribute('r', '7');
+            handle.dataset.handle = direction;
+            handle.setAttribute('aria-label', `Zmień obszar: uchwyt ${direction}`);
+            handleLayer.append(handle);
+          }
+        }
+        document.querySelectorAll('[data-parcel]').forEach((shape) => {
+          const selected = selectedIds.has(shape.dataset.parcel);
+          shape.classList.toggle('selected', selected);
+          shape.setAttribute('aria-pressed', String(selected));
+        });
+        const list = $('selected-list');
+        list.replaceChildren();
+        for (const parcelId of selectedIds) {
+          const item = document.createElement('li');
+          item.className = 'selected-item';
+          const label = document.createElement('span');
+          label.textContent = parcelId;
+          const remove = document.createElement('button');
+          remove.type = 'button';
+          remove.textContent = 'Usuń';
+          remove.setAttribute('aria-label', `Usuń działkę ${parcelId}`);
+          remove.addEventListener('click', () => toggleParcel(parcelId));
+          item.append(label, remove);
+          list.append(item);
+        }
+        $('selected-count').textContent = selectedIds.size ? `Wybrane działki: ${selectedIds.size} z maksymalnie 100` : 'Nie wybrano działek · wybór jest opcjonalny';
+        $('area-summary').textContent = rectangle
+          ? `Prostokąt: ${rectangle.width} × ${rectangle.height} jednostek schematu · brak skali i wymiarów terenowych.`
+          : 'Narysuj prostokąt na mapie albo ustaw go przykładowo.';
+        $('area-summary').classList.toggle('warning', Boolean(rectangle && selectedIds.size && areaWarning().includes('część')));
+        $('map-feedback').textContent = mapUnavailable ? 'Podkład jest niedostępny w tym scenariuszu; dane i geometria nadal są wyłącznie fikcyjne.' : areaWarning();
+        $('map-feedback').classList.toggle('warning', Boolean(rectangle && selectedIds.size && !areaWarning().startsWith('Wybrane działki')));
+        $('map-status').textContent = currentState === 'preview' ? 'Podgląd przykładowy' : currentState === 'stale' ? 'Podgląd nieaktualny' : currentState === 'detail' ? 'Projekt · przykład' : currentState === 'uncertain' ? 'Wynik niepewny' : drawMode ? 'Rysowanie obszaru' : 'Obszar do wyboru';
+        $('map-status').className = 'map-status' + (currentState === 'preview' || currentState === 'detail' ? ' ready' : currentState === 'stale' || currentState === 'uncertain' ? ' alert' : '');
+        $('map-overlay').setAttribute('visibility', mapUnavailable ? 'visible' : 'hidden');
+        $('draw-toggle').classList.toggle('active', drawMode);
+        $('draw-toggle').setAttribute('aria-pressed', String(drawMode));
+        $('draw-toggle').textContent = drawMode ? 'Zakończ rysowanie obszaru' : 'Rysuj obszar na mapie';
+        createButton.disabled = !previewReady;
+      }
+
+      function candidatesFor(query) {
+        const normalized = query.trim().toLocaleLowerCase('pl');
+        if (!normalized) return { message: 'Wpisz nazwę miejscowości, ulicę albo identyfikator działki.', items: [] };
+        if (normalized.includes('leśna')) return { message: 'Znaleziono kilka pasujących ulic. Wybierz właściwą lokalizację.', items: [
+          { title: 'ul. Leśna · Nowa Przystań', kind: 'Ulica · fikcyjna', x: 463, y: 282 },
+          { title: 'ul. Leśna · Zielona Dolina', kind: 'Ulica · fikcyjna', x: 650, y: 378 },
+        ] };
+        if (normalized.includes('000000_0.0000.1/1')) return { message: 'Wynik działki. Wybierz go, aby dodać do projektu i przejść do miejsca.', items: [{ title: 'Działka 1/1 · Nowa Przystań', kind: 'Działka · fikcyjna', x: 445, y: 300, parcelId: parcelIds[0] }] };
+        if (normalized.includes('000000_0.0000.1/2')) return { message: 'Wynik działki. Wybierz go, aby dodać do projektu i przejść do miejsca.', items: [{ title: 'Działka 1/2 · Nowa Przystań', kind: 'Działka · fikcyjna', x: 557, y: 307, parcelId: parcelIds[1] }] };
+        if (normalized.includes('województwo') || normalized.includes('woj.')) return { message: 'Wybierz województwo, aby przybliżyć schematyczną mapę.', items: [{ title: 'Województwo Północne', kind: 'Województwo · fikcyjne', x: 340, y: 175 }] };
+        if (normalized.includes('nowa przystań')) return { message: 'Wybierz miejscowość, aby przesunąć mapę.', items: [{ title: 'Nowa Przystań', kind: 'Miejscowość · fikcyjna', x: 463, y: 282 }] };
+        return { message: 'Brak wyników w lokalnych, fikcyjnych danych makiety.', items: [] };
+      }
+
+      function search(query) {
+        const result = candidatesFor(query);
+        candidateResults.replaceChildren();
+        candidateResults.hidden = false;
+        const message = document.createElement('p');
+        message.className = 'hint';
+        message.textContent = result.message;
+        candidateResults.append(message);
+        for (const item of result.items) {
+          const row = document.createElement('div');
+          row.className = 'candidate';
+          const description = document.createElement('span');
+          description.textContent = item.title;
+          const kind = document.createElement('small');
+          kind.textContent = item.kind;
+          description.append(kind);
+          const choose = document.createElement('button');
+          choose.type = 'button';
+          choose.textContent = 'Pokaż na mapie';
+          choose.addEventListener('click', () => {
+            setView({ x: Math.max(0, item.x - 250), y: Math.max(0, item.y - 150), width: 500, height: 310 });
+            if (item.parcelId) toggleParcel(item.parcelId);
+            $('map-feedback').textContent = `Mapa przesunięta do: ${item.title}. Położenie pozostaje schematyczne.`;
+          });
+          row.append(description, choose);
+          candidateResults.append(row);
         }
       }
 
       function preview() {
-        const values = parcels.value.split(/\r?\n/).map(value => value.trim()).filter(Boolean);
-        const metres = Number(buffer.value);
-        if (!name.value.trim()) return setState('invalid', 'Podaj nazwę projektu.', 'error');
-        if (values.length < 1 || values.length > 100) return setState('invalid', 'Podaj od 1 do 100 pełnych identyfikatorów działek.', 'error');
-        if (buffer.value.trim() === '' || !Number.isFinite(metres) || metres < 0 || metres > 500) return setState('invalid', 'Bufor musi być liczbą od 0 do 500 m.', 'error');
-        if (values.some(value => !/^\d{6}_\d\.\d{4}\.[\d]+(?:\/\d+)?$/.test(value))) return setState('invalid', 'Sprawdź pełny identyfikator każdej działki; każdy wpisz w osobnym wierszu.', 'error');
-        if (new Set(values).size !== values.length) return setState('invalid', 'Usuń powtórzone identyfikatory działek.', 'error');
-        if (values.includes(distant)) return setState('budget', 'Przykład przekracza limit obszaru: maksymalnie 2 km szerokości, 2 km wysokości i 4 km². Utwórz oddzielne projekty.', 'error');
-        const unresolved = values.filter(value => !ids.includes(value));
-        if (unresolved.length) return setState('partial', 'Nie rozpoznano w przykładzie: ' + unresolved.join(', ') + '. Pozostałe wpisy zachowano; popraw dane. Projekt częściowy nie zostanie utworzony.', 'error');
-        if (values.length !== 2 || !ids.every(id => values.includes(id)) || metres !== 100) return setState('partial', 'Makieta pokazuje geometrię wyłącznie dla dwóch przykładowych działek i bufora 100 m. Wybierz „Poprawny podgląd”, aby zobaczyć schemat.', 'error');
-        setState('preview', 'Przykładowy podgląd jest gotowy. Obszar i pochodzenie są fikcyjne — sprawdź legendę przed zapisem.', 'success');
+        if (!nameInput.value.trim()) {
+          currentState = 'invalid';
+          previewReady = false;
+          setFeedback('Podaj nazwę projektu.');
+        } else if (!rectangle) {
+          currentState = 'invalid';
+          previewReady = false;
+          setFeedback('Narysuj obszar roboczy albo ustaw prostokąt przykładowy. Działka nie jest wymagana.');
+        } else if (scenarioIssue === 'partial' || [...selectedIds].some((id) => !parcelIds.includes(id))) {
+          currentState = 'partial';
+          previewReady = false;
+          setFeedback('Wynik działki jest niepełny w tym scenariuszu. Popraw wybór; projekt częściowy nie powstanie.', 'error');
+        } else if (scenarioIssue === 'budget') {
+          currentState = 'budget';
+          previewReady = false;
+          setFeedback('Przykładowy błąd limitu: przekroczono dopuszczalny wymiar obszaru. Właściwe limity sprawdzałby backend.', 'error');
+        } else {
+          currentState = 'preview';
+          previewReady = true;
+          setFeedback('Makieta pokazuje przykładowy podgląd. To nie jest wynik usługi ani walidacja rzeczywistej geometrii.', 'success');
+        }
+        render();
       }
 
-      form.addEventListener('submit', event => { event.preventDefault(); preview(); });
-      form.addEventListener('input', () => {
-        if (state === 'preview' || state === 'stale' || state === 'uncertain' || state === 'detail') setState('stale', 'Dane zmieniono po podglądzie. Poprzedni schemat jest nieaktualny; pokaż podgląd ponownie przed zapisem.');
+      function createProject() {
+        if (!previewReady) return;
+        previewReady = false;
+        if (scenarioIssue === 'uncertain') {
+          currentState = 'uncertain';
+          setFeedback('Niepewny wynik zapisu: w rzeczywistym produkcie sprawdź status, zanim ponowisz tę samą próbę. Makieta niczego nie wysyła.');
+          const check = document.createElement('button');
+          check.type = 'button';
+          check.textContent = 'Pokaż przykładowy status projektu';
+          check.addEventListener('click', () => showDetail('Nie można potwierdzić rzeczywistego zapisu. Ten lokalny szczegół jest tylko ilustracją.'));
+          feedback.append(document.createElement('br'), check);
+        } else {
+          showDetail('Przykładowy projekt utworzony po potwierdzeniu. Adres /projects/demo-001 jest fikcyjny; nic nie zostało zapisane.');
+        }
+        render();
+      }
+
+      function showDetail(message) {
+        currentState = 'detail';
+        setFeedback(message, 'success');
+        render();
+      }
+
+      function changeArea(next, message = '') {
+        rectangle = next;
+        areaEdited = true;
+        scenarioIssue = '';
+        announceChange(message);
+      }
+
+      function startPointer(event) {
+        if (event.button !== 0) return;
+        const handle = event.target.closest('[data-handle]');
+        const isArea = event.target === area;
+        const point = svgPoint(event);
+        if (handle && rectangle) {
+          drag = { kind: 'resize', direction: handle.dataset.handle, point, original: { ...rectangle } };
+        } else if (isArea && rectangle) {
+          drag = { kind: 'move', point, original: { ...rectangle } };
+        } else if (drawMode) {
+          drag = { kind: 'draw', point };
+          rectangle = { x: point.x, y: point.y, width: 1, height: 1 };
+          render();
+        } else {
+          drag = { kind: 'pan', clientX: event.clientX, clientY: event.clientY, original: { ...view } };
+        }
+        map.setPointerCapture(event.pointerId);
+        event.preventDefault();
+      }
+
+      function movePointer(event) {
+        if (!drag) return;
+        if (drag.kind === 'pan') {
+          const box = map.getBoundingClientRect();
+          setView({
+            x: drag.original.x - (event.clientX - drag.clientX) * drag.original.width / box.width,
+            y: drag.original.y - (event.clientY - drag.clientY) * drag.original.height / box.height,
+          });
+          return;
+        }
+        const point = svgPoint(event);
+        if (drag.kind === 'draw') {
+          rectangle = { x: Math.min(drag.point.x, point.x), y: Math.min(drag.point.y, point.y), width: Math.max(1, Math.abs(point.x - drag.point.x)), height: Math.max(1, Math.abs(point.y - drag.point.y)) };
+        } else if (drag.kind === 'move') {
+          rectangle = { ...drag.original, x: drag.original.x + point.x - drag.point.x, y: drag.original.y + point.y - drag.point.y };
+        } else {
+          const { direction, original } = drag;
+          const changeX = point.x - drag.point.x;
+          const changeY = point.y - drag.point.y;
+          let left = original.x;
+          let top = original.y;
+          let right = original.x + original.width;
+          let bottom = original.y + original.height;
+          if (direction.includes('w')) left = Math.min(right - 20, left + changeX);
+          if (direction.includes('e')) right = Math.max(left + 20, right + changeX);
+          if (direction.includes('n')) top = Math.min(bottom - 20, top + changeY);
+          if (direction.includes('s')) bottom = Math.max(top + 20, bottom + changeY);
+          rectangle = { x: left, y: top, width: right - left, height: bottom - top };
+        }
+        render();
+      }
+
+      function endPointer(event) {
+        if (!drag) return;
+        const changedGeometry = drag.kind !== 'pan';
+        drag = null;
+        if (changedGeometry && rectangle && (rectangle.width >= 20 && rectangle.height >= 20)) {
+          areaEdited = true;
+          scenarioIssue = '';
+          if (previewReady) {
+            previewReady = false;
+            currentState = 'stale';
+            setFeedback('Dane lub obszar zmieniono po podglądzie. Poprzedni podgląd jest nieaktualny; sprawdź go ponownie.');
+          }
+        } else if (changedGeometry && rectangle && (rectangle.width < 20 || rectangle.height < 20)) {
+          rectangle = null;
+          setFeedback('Zaznaczenie jest zbyt małe w tym schemacie. Narysuj większy prostokąt.');
+        }
+        render();
+        if (map.hasPointerCapture(event.pointerId)) map.releasePointerCapture(event.pointerId);
+      }
+
+      document.querySelectorAll('[data-parcel]').forEach((shape) => {
+        shape.addEventListener('pointerdown', (event) => { if (!drawMode) event.stopPropagation(); });
+        shape.addEventListener('click', () => toggleParcel(shape.dataset.parcel));
+        shape.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggleParcel(shape.dataset.parcel); }
+        });
       });
-      save.addEventListener('click', () => {
-        if (state === 'preview') setState('uncertain', 'Przykładowy wynik zapisu jest niepewny. Nie ponawiaj zapisu w ciemno — sprawdź, czy projekt istnieje. Makieta niczego nie zapisuje.');
+      document.querySelectorAll('[data-place]').forEach((place) => {
+        const focusPlace = () => {
+          const x = Number(place.getAttribute('cx'));
+          const y = Number(place.getAttribute('cy'));
+          setView({ x: Math.max(0, x - 250), y: Math.max(0, y - 150), width: 500, height: 310 });
+          $('map-feedback').textContent = `Mapa przesunięta do ${place.dataset.place === 'town' ? 'Nowej Przystani' : 'Zielonej Doliny'}; geometria jest fikcyjna.`;
+        };
+        place.addEventListener('pointerdown', (event) => { if (!drawMode) event.stopPropagation(); });
+        place.addEventListener('click', focusPlace);
+        place.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); focusPlace(); } });
       });
-      document.querySelectorAll('[data-demo]').forEach(button => button.addEventListener('click', () => {
-        const demo = button.dataset.demo;
-        name.value = demo === 'empty' ? '' : 'Działki przy lesie';
-        parcels.value = demo === 'empty' ? '' : demo === 'invalid' ? '123/4' : demo === 'partial' ? ids[0] + '\n' + missing : demo === 'budget' ? ids[0] + '\n' + distant : ids.join('\n');
-        buffer.value = '100';
-        if (demo === 'empty') return setState('empty');
-        preview();
-        if (demo === 'stale') { buffer.value = '150'; setState('stale', 'Dane zmieniono po podglądzie. Poprzedni schemat jest nieaktualny; pokaż podgląd ponownie przed zapisem.'); }
-        if (demo === 'uncertain') save.click();
-        if (demo === 'saved') setState('detail', 'Przykładowy szczegół projektu po ponownym otwarciu. To tylko ilustracja — w tej makiecie nie istnieje zapisany projekt.', 'success');
+      map.addEventListener('pointerdown', startPointer);
+      map.addEventListener('pointermove', movePointer);
+      map.addEventListener('pointerup', endPointer);
+      map.addEventListener('pointercancel', endPointer);
+      area.addEventListener('keydown', (event) => {
+        if (!rectangle || !['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
+        event.preventDefault();
+        const step = event.shiftKey ? 10 : 8;
+        const next = { ...rectangle };
+        if (event.shiftKey && event.key === 'ArrowRight') next.width += step;
+        else if (event.shiftKey && event.key === 'ArrowLeft') next.width = Math.max(20, next.width - step);
+        else if (event.shiftKey && event.key === 'ArrowDown') next.height += step;
+        else if (event.shiftKey && event.key === 'ArrowUp') next.height = Math.max(20, next.height - step);
+        else if (event.key === 'ArrowLeft') next.x -= step;
+        else if (event.key === 'ArrowRight') next.x += step;
+        else if (event.key === 'ArrowUp') next.y -= step;
+        else next.y += step;
+        changeArea(next, 'Zmieniono obszar klawiaturą.');
+      });
+
+      $('search-form').addEventListener('submit', (event) => {
+        event.preventDefault();
+        search($('search-query').value);
+      });
+      nameInput.addEventListener('input', () => announceChange('Nazwa projektu została zmieniona. Ponownie sprawdź podgląd przed utworzeniem.'));
+      document.querySelectorAll('[data-query]').forEach((button) => button.addEventListener('click', () => {
+        $('search-query').value = button.dataset.query;
+        search(button.dataset.query);
       }));
+      $('parcel-form').addEventListener('submit', (event) => {
+        event.preventDefault();
+        const id = $('parcel-id').value.trim();
+        if (!/^\d{6}_\d\.\d{4}\.[\d]+(?:\/\d+)?$/.test(id)) {
+          setFeedback('Wpisz pełny identyfikator działki albo wybierz ją na mapie.');
+        } else {
+          toggleParcel(id);
+          $('parcel-id').value = '';
+        }
+      });
+      $('draw-toggle').addEventListener('click', () => {
+        drawMode = !drawMode;
+        map.classList.toggle('draw-mode', drawMode);
+        $('map-feedback').textContent = drawMode ? 'Przeciągnij po mapie, aby narysować prostokąt.' : 'Tryb rysowania wyłączony.';
+        render();
+      });
+      $('sample-area').addEventListener('click', () => changeArea({ x: 335, y: 190, width: 300, height: 205 }, 'Ustawiono przykładowy prostokąt. Wymiary są schematyczne.'));
+      $('area-width').addEventListener('change', (event) => {
+        const width = Number(event.target.value);
+        if (!Number.isFinite(width) || width < 20 || width > 420) return setFeedback('Szerokość schematyczna musi mieścić się w zakresie 20–420.');
+        changeArea({ ...(rectangle ?? { x: 335, y: 190, height: 205 }), width });
+      });
+      $('area-height').addEventListener('change', (event) => {
+        const height = Number(event.target.value);
+        if (!Number.isFinite(height) || height < 20 || height > 320) return setFeedback('Wysokość schematyczna musi mieścić się w zakresie 20–320.');
+        changeArea({ ...(rectangle ?? { x: 335, y: 190, width: 300 }), height });
+      });
+      document.querySelectorAll('[data-move]').forEach((button) => button.addEventListener('click', () => {
+        if (!rectangle) return setFeedback('Najpierw ustaw obszar roboczy.');
+        const next = { ...rectangle };
+        if (button.dataset.move === 'up') next.y -= 10;
+        if (button.dataset.move === 'down') next.y += 10;
+        if (button.dataset.move === 'left') next.x -= 10;
+        if (button.dataset.move === 'right') next.x += 10;
+        changeArea(next);
+      }));
+      $('preview-button').addEventListener('click', preview);
+      createButton.addEventListener('click', createProject);
+      $('zoom-in').addEventListener('click', () => setView({ x: view.x + view.width * .1, y: view.y + view.height * .1, width: view.width * .8, height: view.height * .8 }));
+      $('zoom-out').addEventListener('click', () => setView({ x: view.x - view.width * .125, y: view.y - view.height * .125, width: view.width * 1.25, height: view.height * 1.25 }));
+      $('reset-map').addEventListener('click', () => setView({ x: 0, y: 0, width: 900, height: 560 }));
+
+      document.querySelectorAll('[data-demo]').forEach((button) => button.addEventListener('click', () => {
+        const demo = button.dataset.demo;
+        selectedIds.clear();
+        rectangle = null;
+        areaEdited = false;
+        previewReady = false;
+        scenarioIssue = '';
+        mapUnavailable = false;
+        drawMode = false;
+        map.classList.remove('draw-mode');
+        nameInput.value = demo === 'empty' ? '' : 'Obszar Nowej Przystani';
+        $('map-overlay').setAttribute('visibility', 'hidden');
+        setView({ x: 0, y: 0, width: 900, height: 560 });
+        candidateResults.hidden = true;
+        if (demo === 'empty') {
+          currentState = 'empty';
+          setFeedback('Wybór działek jest opcjonalny. Narysuj obszar albo wyszukaj miejsce.');
+          return render();
+        }
+        rectangle = demo === 'preview' ? { x: 400, y: 220, width: 260, height: 200 } : { x: 335, y: 190, width: 300, height: 205 };
+        if (demo === 'preview' || demo === 'stale' || demo === 'uncertain' || demo === 'detail') selectedIds.add(parcelIds[0]);
+        if (demo === 'no-parcel') selectedIds.clear();
+        if (demo === 'partial') { selectedIds.add('000000_0.0000.9/9'); scenarioIssue = 'partial'; }
+        if (demo === 'budget') scenarioIssue = 'budget';
+        if (demo === 'offline') {
+          mapUnavailable = true;
+          currentState = 'offline';
+          setFeedback('Nie można pobrać podkładu w tym scenariuszu. W produkcie mapa i zapis wymagałyby odpowiedzi backendu.');
+          return render();
+        }
+        if (demo === 'invalid') {
+          currentState = 'invalid';
+          setFeedback('Przykładowy błąd formularza: nazwa projektu jest wymagana.');
+          nameInput.value = '';
+          return render();
+        }
+        if (demo === 'ambiguous') {
+          currentState = 'search';
+          $('search-query').value = 'ul. Leśna';
+          search('ul. Leśna');
+          setFeedback('Wybierz jedną z dwóch pasujących ulic; nie wskazujemy wyniku automatycznie.');
+          return render();
+        }
+        preview();
+        if (demo === 'stale') {
+          rectangle.x += 12;
+          previewReady = false;
+          currentState = 'stale';
+          setFeedback('Obszar zmieniono po podglądzie. Wynik jest nieaktualny i nie można go potwierdzić.');
+        }
+        if (demo === 'uncertain') {
+          scenarioIssue = 'uncertain';
+          createProject();
+        }
+        if (demo === 'detail') showDetail('Przykładowy projekt po ponownym otwarciu: obszar i identyfikator działki są odtworzone tylko w stanie lokalnym makiety.');
+        render();
+      }));
+
+      render();
     })();
   </script>
 </body>

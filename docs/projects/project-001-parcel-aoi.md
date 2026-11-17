@@ -219,7 +219,7 @@ docs/projects/
 ├── project-001-parcel-aoi.md                        active plan
 ├── project-001-interactive-api-proposal.yaml        current v2 proposal; owner review required
 ├── project-001-openapi-proposal.yaml                superseded parcel-only v1 fixture contract
-└── project-001-mockup.html and PNGs                 old scope; refresh before frontend work
+└── project-001-mockup.html and PNGs                 offline interactive design evidence
 backend-simulator/src/ [modify]                      provisional synthetic routes and fixtures
 backend/ [owner implements]                          provider, validation, state
 docs/requirements/projects-and-aoi.md [revise for confirmed product decisions]
@@ -233,13 +233,14 @@ The agent does not implement backend production code under this proposal.
 
 ## UI And UX Proposal
 
-The existing self-contained [mockup](project-001-mockup.html),
+The self-contained [mockup](project-001-mockup.html),
 [desktop preview 1440 × 900](project-001-desktop.png), and
-[mobile preview 390 × 844](project-001-mobile.png) illustrate the **old
-parcel-only scope**, not the interaction proposed here. Update them before
-implementation: use fictional data, no network or persistence, and open the HTML
-locally. They are design evidence, not implementation or acceptance evidence.
-The following is a directly readable fallback for the revised interaction:
+[mobile preview 390 × 844](project-001-mobile.png) now illustrate the revised
+interactive scope with fictional local data and no network or persistence. The
+schematic map supports navigation, place and parcel search, parcel selection,
+rectangle drawing and editing, preview, and illustrative save/reopen and failure
+states. The mockup is design evidence only: it is not a map provider, product
+implementation, backend validation, or evidence of real data coverage.
 
 ```text
 Desktop                                  Mobile portrait
@@ -258,6 +259,9 @@ invalidates the preview; late responses cannot reinstate it. The user can correc
 inputs and knowingly retry an uncertain create only as the agreed idempotency
 contract permits. Provide labels, visible focus, keyboard operation and rectangle
 editing, announced asynchronous messages, and non-color-only distinctions.
+Preserve the mockup's composition while reducing explanatory text in the product;
+use understandable, accessible icons and tooltips where appropriate, keeping
+important warnings visible.
 
 ## Failure, Safety, And Migration
 
@@ -275,11 +279,13 @@ work and must preserve existing data; normal builds and tests use fixtures.
 
 ## Implementation Plan
 
-1. [partially complete] Consolidate the interactive scope in this active plan.
+1. [complete] Consolidate the interactive scope in this active plan and update
+   the offline mockup and desktop/mobile previews.
    The accepted requirement and functional draft now cover optional parcels,
    editable rectangles, and partial overlap; dated provider documentation
-   evidence is recorded. The offline mockup and desktop/mobile previews still
-   show the old parcel-only journey and must be refreshed before frontend work.
+   evidence is recorded. The mockup provides illustrative map navigation,
+   search, parcel selection, rectangle editing, optional-parcel preview, and
+   representative error and save states; it remains a local design artifact.
 2. [implemented for fixture review; owner contract acceptance pending] Add the
    separate v2 OpenAPI proposal for tiles, place search, parcel lookup,
    rectangle preview, create and read. Define CRS, comparison, fingerprint,
@@ -287,7 +293,7 @@ work and must preserve existing data; normal builds and tests use fixtures.
    now has deterministic fictional images, searches, geometry, failures, and
    contract tests. Keep production calls and generated clients blocked until
    the owner accepts the v2 contract; update the backend queue afterward.
-3. [blocked until contract acceptance and mockup refresh] Generate the client and implement the
+3. [blocked until contract acceptance] Generate the client and implement the
    lazy Angular map, backend-mediated tiles, search and disambiguation, and
    parcel selection by map click and text. Test navigation, accessibility,
    cancellation, ambiguity and provider failure with simulator fixtures.
@@ -332,11 +338,18 @@ work and must preserve existing data; normal builds and tests use fixtures.
 ## Result
 
 The interactive scope is authorized. The accepted requirement, functional
-draft, dated provider research, v2 contract proposal, and independent synthetic
-simulator routes now reflect it; v1 fixture scenarios remain separate. The
-mockup still requires refresh before frontend work, and the proposed API requires
-owner acceptance before generating clients or making provider calls. The backend
-and PostgreSQL remain owner-owned and are not implemented here.
+draft, dated provider research, v2 contract proposal, independent synthetic
+simulator routes, and offline interactive mockup now reflect it; v1 fixture
+scenarios remain separate. The proposed API still requires owner acceptance
+before generating clients or making provider calls. The backend and PostgreSQL
+remain owner-owned and are not implemented here.
+
+On 2026-11-17, the mockup was exercised in local Chromium for ambiguous search,
+map-based parcel selection, pan and zoom, rectangle drawing and resizing,
+keyboard editing, zero-parcel preview, invalidation, and representative failure,
+uncertain-save, and project-detail states. The run reported no browser errors or
+external HTTP(S) requests. The refreshed PNGs are 1440 × 900 and 390 × 844;
+they show fictional geometry and are not implementation or provider evidence.
 
 Backend simulator validation passed all 22 tests, including the interactive
 scenarios and retained v1 cases, with TypeScript and formatting checks. The
