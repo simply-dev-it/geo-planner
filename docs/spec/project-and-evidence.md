@@ -61,6 +61,34 @@ The editor rebuilds and reloads an open page when inputs change. Reload discards
 transient navigation and unfinished drafts. A failed rebuild or reload poll
 leaves the current browser page without a dedicated warning.
 
+## Planned Change (Draft)
+
+This approved implementation scope concerns the replacement application; none
+of the following behavior is implemented yet. The legacy workflow above remains
+unchanged. The expected outcome and limits are owned by
+[PROJECT-001](../requirements/projects-and-aoi.md#project-001--create-a-bounded-project-area-from-parcels).
+
+A user enters a project name and one or more full parcel identifiers, chooses a
+context buffer, and requests a preview before creating a project. The proposed
+first interaction uses typed identifiers rather than map selection. The preview
+distinguishes selected parcels, their union, buffered context, and acquisition
+extent, and explains the CRS, source, observation date, and limitations. It is
+indicative evidence, not a legal or surveying determination.
+
+The form accepts 1–100 identifiers and a buffer of 0–500 m, defaulting to
+100 m. Unresolved parcels, ambiguous spatial data, or a subject or buffered
+extent beyond 2 km width, 2 km height, or 4 km² block creation. The user can
+correct the retained inputs; over-limit selections are directed to separate
+projects. Fetched neighbors, if present, remain context rather than subjects.
+
+Changing preview inputs invalidates the preview. Before creating a project,
+the backend resolves the parcels again and rejects a result that differs from
+the preview. On success, the user opens a stable project address; reopening after
+restart restores the accepted identifiers, geometries, CRS, and buffer. Source
+unavailability, stale results, cancellation, and an uncertain save are visible
+without claiming a partial project was created. A safe repeat of an uncertain
+save and the exact comparison and API contract remain to be agreed.
+
 ## Evidence
 
 - [Builder](../../mapa/scripts/build_map.py), [refresh implementation](../../mapa/scripts/update_sources.py), and [editor](../../mapa/scripts/edit_map_server.py).
