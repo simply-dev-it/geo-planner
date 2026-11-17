@@ -1,16 +1,15 @@
 openapi: 3.1.0
 info:
-  title: Geo Planner Project API (Proposal)
+  title: Geo Planner Parcel-Only Project API (Superseded Proposal)
   version: 0.1.0
   description: |
-    PROPOSAL ONLY: derived from PROJECT-001, the legacy ULDK lookup, and
-    synthetic offline fixtures. It is not an accepted production contract.
-    Agree its authoritative repository location, geometry representation,
-    fingerprint canonicalization, idempotency retention/recovery, limits,
-    authentication, and source-date semantics with the owner before generating
-    a client or implementing production calls. The loopback simulator is not
-    evidence of provider access or durable storage.
-x-contract-status: proposed
+    HISTORICAL PROPOSAL ONLY: this parcel-only v1 draft predates the accepted
+    interactive PROJECT-001 scope. Its routes remain only as compatibility
+    fixtures in the simulator. The current review target is
+    `project-001-interactive-api-proposal.yaml`; neither proposal is an accepted
+    production contract. Do not generate a client or make production calls from
+    this historical draft.
+x-contract-status: superseded-proposal
 servers:
   - url: /api/v1
     description: Proposed same-origin product API base path.

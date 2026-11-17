@@ -63,31 +63,40 @@ leaves the current browser page without a dedicated warning.
 
 ## Planned Change (Draft)
 
-This approved implementation scope concerns the replacement application; none
-of the following behavior is implemented yet. The legacy workflow above remains
-unchanged. The expected outcome and limits are owned by
-[PROJECT-001](../requirements/projects-and-aoi.md#project-001--create-a-bounded-project-area-from-parcels).
+The approved PROJECT-001 replacement scope is not yet implemented; the legacy
+workflow above remains unchanged. Product behavior and limits are owned by
+[PROJECT-001](../requirements/projects-and-aoi.md#project-001--create-a-project-from-an-interactive-working-area).
+The application API proposal still requires owner review before frontend client
+generation or production provider calls.
 
-A user enters a project name and one or more full parcel identifiers, chooses a
-context buffer, and requests a preview before creating a project. The proposed
-first interaction uses typed identifiers rather than map selection. The preview
-distinguishes selected parcels, their union, buffered context, and acquisition
-extent, and explains the CRS, source, observation date, and limitations. It is
-indicative evidence, not a legal or surveying determination.
+A user can pan and zoom an interactive map across Poland and search for a
+voivodeship, locality, street, or parcel number. Search results are typed and
+ambiguous matches require an explicit choice. Parcels can also be selected by
+clicking the map or entering an identifier. A project may be created without any
+selected parcel.
 
-The form accepts 1–100 identifiers and a buffer of 0–500 m, defaulting to
-100 m. Unresolved parcels, ambiguous spatial data, or a subject or buffered
-extent beyond 2 km width, 2 km height, or 4 km² block creation. The user can
-correct the retained inputs; over-limit selections are directed to separate
-projects. Fetched neighbors, if present, remain context rather than subjects.
+An unambiguous parcel can suggest an initial rectangular working area with
+100 m of context. The user can draw an area anywhere and resize it by dragging
+edges or corners or through an accessible alternative. Later parcel selection
+does not silently replace a manually edited rectangle. Parcel boundaries stay
+unchanged; the working rectangle may cover only part of a selected parcel, and
+the preview warns when selected geometry extends outside it.
 
-Changing preview inputs invalidates the preview. Before creating a project,
-the backend resolves the parcels again and rejects a result that differs from
-the preview. On success, the user opens a stable project address; reopening after
-restart restores the accepted identifiers, geometries, CRS, and buffer. Source
-unavailability, stale results, cancellation, and an uncertain save are visible
-without claiming a partial project was created. A safe repeat of an uncertain
-save and the exact comparison and API contract remain to be agreed.
+The backend mediates raster map tiles through configured sources; the browser
+does not access providers directly or submit arbitrary URLs. The provider and
+full coverage for map scales and place-search types are not yet selected. The
+preview includes the rectangle, optional parcel geometries, CRS, source,
+observation date, attribution, warnings, and uncertainty. This is indicative
+spatial evidence, not a legal, cadastral, or surveying determination.
+
+The project permits zero to 100 parcel identifiers. The parcel-subject envelope
+when present and the working rectangle are each limited to 2 km width, 2 km
+height, and 4 km²; incomplete, ambiguous, invalid, stale, or excessive inputs
+cannot create a project. Changing selection or rectangle invalidates the preview.
+Before create, the backend validates the exact rectangle and re-resolves selected
+parcels, and saves only a complete result matching the preview. Reopening by a
+stable address after backend restart restores the area, selected parcel data,
+CRS, and relevant provenance. No partial project is reported as successful.
 
 ## Evidence
 

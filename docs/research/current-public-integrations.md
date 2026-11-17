@@ -2,23 +2,28 @@
 
 ## Status And Decision Trace
 
-- Status: DEFERRED
-- Evidence checked: 2026-11-17 against the checked-in prototype and the official
-  ULDK operation documentation; no fresh live-service validation was performed.
-- Question: which exact public operations, layers, formats, and legacy failure
-  behavior must inform replacement ULDK, WMS, and APP adapters?
+- Status: ACTIVE
+- Evidence checked: 2026-11-17 against the checked-in prototype and official
+  GUGiK documentation for ULDK, UUG/OpenLS, and WMS/WMTS; no live-service
+  validation was performed.
+- Question: which specific allowlisted map layer and provider operations can
+  satisfy interactive Poland-wide navigation and typed place/parcel search,
+  with acceptable coverage, source terms, coordinate systems, and limits?
 - Completed outputs: [ACQUIRE-001](../requirements/layer-acquisition.md) owns
   safe acquisition, [LAYER-004](../requirements/layer-viewing.md) owns raster
   interpretation, and
   [acquisition flow](../architecture/acquisition-and-artifact.md) owns
-  provider-adapter and catalog boundaries.
-- Remaining work: validate the exact live endpoint, capabilities, licence,
-  coverage, and operational limits for each adapter slice.
-- Return before: implementing or materially changing any ULDK, ORTO, KIEG,
-  KINA, KIUT, or APP adapter.
+  provider-adapter and catalog boundaries. This document now records a dated,
+  documentation-only check for the interactive map and search candidates below.
+- Remaining work: identify exact current layer/service endpoints and capabilities;
+  validate live CRS/tile-matrix mapping, license, attribution, coverage, cache
+  terms, provider limits, failure behavior, and search query/response semantics.
+- Return before: making a live probe or implementing any real map, place-search,
+  or ULDK provider adapter.
 
-This document records what legacy code requests, not what a current public
-service guarantees.
+The legacy request inventory below describes what the prototype requests, not
+what a current public service guarantees. Documentation evidence below is
+separate from live-service validation and must not be used to claim availability.
 
 ## Integrations Used by the Prototype
 
@@ -74,6 +79,58 @@ preview/create/read semantics, explicit CRS and coordinate order, provenance,
 structured partial/error results, and revalidation behavior without accepting
 arbitrary provider URLs or leaking raw provider query syntax to Angular.
 
+## Interactive Map And Search Documentation Check (2026-11-17)
+
+### Map imagery
+
+GUGiK's official [WMS/WMTS service catalogue](https://www.geoportal.gov.pl/pl/usluga/uslugi-przegladania-wms-i-wmts)
+lists browsing services for several national map products. Its description says
+WMTS serves pre-generated raster tiles, while WMS generates an image for each
+request. This supports evaluating WMTS for backend-mediated tiles but does not
+identify a selected layer or prove a normalized web tile grid, CRS, full Poland
+coverage, terms, attribution, or cache policy.
+
+The official [BDOT10k service guide](https://www.geoportal.gov.pl/en/data/topographic-objects-database-bdot10k)
+states that its WMTS is available from scale 1:50,000 to 1:1,000 and recommends
+WMS outside that range. Therefore this candidate alone does not establish a
+continuous national-to-parcel-scale basemap. Other catalogued products or
+multiple scale-banded layers may be evaluated, but a specific source remains
+unselected. These are documentation findings only; no capabilities document,
+tile, or WMS request was fetched or tested.
+
+### Place and parcel search
+
+GUGiK's official [UUG service page](https://services.gugik.gov.pl/uug) describes
+the Universal Geocoding Service as locating point addresses, streets,
+localities, and kilometre posts. The official
+[OpenLS service page](https://www.geoportal.gov.pl/pl/usluga/usluga-openls)
+describes the GUGiK profile as locating an address point and returning its
+address-register identity. This is relevant to address, street, and locality
+search, but does not document a voivodeship-name search, guarantee arbitrary
+free-text/autocomplete behavior, or prove current query syntax, response shape,
+limits, terms, or availability. The actual UUG parameter document and response
+have not been independently validated in this check.
+
+The official [ULDK operation documentation](https://uldk.gugik.gov.pl/opis.html)
+lists parcel lookup by point (`GetParcelByXY`) and by full identifier or
+precinct-name plus parcel number (`GetParcelByIdOrNr`), with default geometry
+projection `EPSG:2180`. It explicitly warns that precinct-name plus parcel
+number can return multiple parcels. It also lists lookups for voivodeship,
+county, commune, and region by identifiers or coordinates; that is not evidence
+of free-text place-name search by voivodeship. Full parcel identity, candidate
+disambiguation, and point-to-parcel resolution belong behind the application
+backend rather than exposing ULDK query syntax to Angular.
+
+### Product boundary and remaining unknowns
+
+The owner chose backend-mediated tiles; this is a product boundary, not a
+selection of GUGiK or another provider. A proposed product API uses server-owned
+layer IDs and synthetic examples only. Before a production adapter, confirm
+exact map endpoints, tile matrices/projections and scale
+coverage, provider terms and attribution, cache/rate limits, and UUG/ULDK
+request/response behavior. Do not copy upstream URLs from public pages into
+client input or allow arbitrary proxy URLs.
+
 ## Evidence in the Repository
 
 - `mapa/scripts/update_sources.py` contains ULDK and WMS request construction.
@@ -103,6 +160,10 @@ as a dated visual snapshot rather than a complete national or legal record.
 
 - [GUGiK ULDK operation documentation](https://uldk.gugik.gov.pl/opis.html)
 - [GUGiK ULDK service](https://uldk.gugik.gov.pl/)
+- [GUGiK UUG service](https://services.gugik.gov.pl/uug)
+- [GUGiK OpenLS service](https://www.geoportal.gov.pl/pl/usluga/usluga-openls)
+- [GUGiK WMS/WMTS service catalogue](https://www.geoportal.gov.pl/pl/usluga/uslugi-przegladania-wms-i-wmts)
+- [GUGiK BDOT10k browsing services](https://www.geoportal.gov.pl/en/data/topographic-objects-database-bdot10k)
 - [GUGiK EGiB and KIEG overview](https://www.geoportal.gov.pl/pl/dane/ewidencja-gruntow-i-budynkow-egib/)
 - [Polish national geoportal](https://www.geoportal.gov.pl/)
 - [OGC Web Map Service standard](https://www.ogc.org/standard/wms/)

@@ -2,12 +2,12 @@
 
 ## Status
 
-- Phase: `APPROVED FOR IMPLEMENTATION` for the previously authorized parcel-based
-  scope. The interactive revision below is a proposal for review; moving this
-  plan does not itself authorize implementation of the revised scope. API
-  contract details remain subject to owner agreement.
-- Requirement: [PROJECT-001](../requirements/projects-and-aoi.md#project-001--create-a-bounded-project-area-from-parcels), accepted but not implemented or verified; it still describes the older parcel-based scope and needs revision.
-- Functional draft: [Project and evidence preparation](../spec/project-and-evidence.md#planned-change-draft) still describes the older scope and needs revision; the legacy description remains current.
+- Phase: `APPROVED FOR IMPLEMENTATION` for the revised interactive scope in this
+  plan. The owner directed implementation of the agreed project area workflow;
+  the application contract still requires owner review before frontend client
+  generation or production provider calls.
+- Requirement: [PROJECT-001](../requirements/projects-and-aoi.md#project-001--create-a-project-from-an-interactive-working-area) is accepted, not implemented or verified.
+- Functional draft: [Project and evidence preparation](../spec/project-and-evidence.md#planned-change-draft) records the approved replacement scope; the current legacy behavior remains unchanged.
 - Owner responsibility: the owner implements Kotlin backend production code; frontend work is under owner review. Full acceptance requires the real backend and PostgreSQL, not just the simulator.
 
 ## Problem And Outcome
@@ -37,9 +37,9 @@ no partial writes.
   matching result can be saved. Reopen by stable address and restore the area,
   parcel geometries and identifiers, CRS, and relevant provenance.
 - Retain inputs for correction on incomplete, ambiguous, invalid, or excessive
-  results. The proposed retained limits for the parcel subject, when present,
-  and working extent are 2 km width, 2 km height, and 4 km²; direct users to
-  separate projects rather than offering an override.
+  results. The retained limits for the parcel subject, when present, and working
+  extent are 2 km width, 2 km height, and 4 km²; direct users to separate
+  projects rather than offering an override.
 - Neighboring parcels, if returned, are context only. Source-layer acquisition
   and arbitrary polygon editing are outside this slice. Do not migrate or alter
   legacy code, tracked data, private overlays, or external snapshots.
@@ -59,12 +59,12 @@ no partial writes.
 - The owner confirmed that parcels are optional, the working area is an
   editable rectangle, and it may cut through selected parcels without changing
   their boundaries. Basemap tiles go through our backend rather than directly
-  from a provider to the browser. The detailed contract remains unaccepted.
-- Existing PROJECT-001 limits and 100 m initial context are carried forward as
-  proposed assumptions for the revised scope; their application to an optional
-  parcel subject and a manually edited rectangle must be reflected in the
-  requirement. The name field, fingerprint, idempotency, and detailed UI remain
-  proposals rather than separately accepted requirements.
+  from a provider to the browser. The implementation is authorized; the
+  detailed application contract remains unaccepted until owner review.
+- Existing PROJECT-001 limits and 100 m initial context are retained in the
+  revised accepted requirement. The name field, fingerprint, idempotency, and
+  detailed UI are implementation/contract proposals rather than separate user
+  decisions.
 - [ULDK and integration evidence](../research/current-public-integrations.md)
   and [AOI research](../research/area-of-interest-and-raster-sizing.md) contain
   dated findings. The official ULDK operation description was checked on
@@ -93,23 +93,21 @@ no partial writes.
 
 ## Open Decisions And Contract Proposal
 
-The owner previously authorized implementation of the parcel-based scope; the
-interactive revision is presented here for review. The concrete versioned
-OpenAPI contract still requires owner agreement before dependent production API
-calls or generated client are implemented. The owner requested examining public
-APIs, proposing the backend contract and modeling it in the simulator for review.
-The current parcel-only draft is
-[project-001-openapi-proposal.yaml](project-001-openapi-proposal.yaml), not an
-accepted or authoritative production contract. ULDK remains a parcel-data
-source, not the application contract or its authority. Agree the authoritative
-contract location rather than making the simulator or backend queue another
-contract owner. The draft must be revised to cover these conceptual operations:
+The owner authorized the revised interactive scope and asked for an API proposal
+derived from public-service behavior, then represented in a fixture simulator.
+The current review target is
+[the interactive v2 OpenAPI proposal](project-001-interactive-api-proposal.yaml);
+it is not accepted or authoritative. The former
+[parcel-only v1 proposal](project-001-openapi-proposal.yaml) is retained only
+with the old simulator routes. ULDK remains a parcel-data source, not the
+application contract or its authority. Agree the authoritative contract location
+before generating clients or making production API calls. The v2 proposal covers:
 
 1. `getMapTile(layerId, z, x, y)` returns bounded image bytes and cache and
    attribution metadata from a server-owned, allowlisted source.
-2. `searchPlaces(query, context)` returns typed, disambiguated candidates and
-   navigation coordinates or extents; `resolveParcel(point | query, context)`
-   returns full identifiers and geometries or explicit ambiguity/errors.
+2. `GET /search?query=...` returns typed, disambiguated candidates and navigation
+   coordinates or extents; `POST /parcels/resolve` accepts a point or identifier
+   and returns full identifiers/geometries or explicit ambiguity/errors.
 3. `preview(parcelIds[], workingExtent, crs)` returns parcel geometries, exact
    rectangle, provenance, warnings, and a fingerprint for a complete result;
    zero parcels is valid.
@@ -137,17 +135,15 @@ The contract decision must specify:
 - What source date means and what is displayed when it is unavailable; exact
   project fields, naming/identifier validation, coordinate representations,
   authentication/deployment assumptions, and data retention.
-- Exact application of width, height, and area limits to a parcel subject and
-  independently edited working rectangle, including disconnected parcels.
 - Selected providers' actual coverage across national and parcel zoom levels,
   tile matrices, capabilities, CRS, licensing, attribution, cache rules, rate
   limits and failures; support for isolated street names and ambiguous parcels.
 
-Contract examples, fingerprint fixtures, and acceptance of the owner-owned
-backend implementation are necessary before they are treated as guarantees.
-The recommended geometry convention in the old proposal is normalized
-`EPSG:2180`, with explicit easting/northing coordinate order and metric extents;
-the exact wire geometry and fingerprint canonicalization remain owner decisions.
+Contract examples, fingerprint fixtures, and owner acceptance of the
+owner-implemented backend are necessary before these are treated as guarantees.
+The proposed geometry convention is `EPSG:2180`, explicit easting/northing
+coordinate order, and metric extents; wire geometry and fingerprint
+canonicalization remain owner decisions.
 Define extent order, transforms, candidate types, partial results and structured
 errors; restrict upstream identifiers, bounds, concurrency, time and size, and
 validate image MIME types and provider/OGC errors. Never accept arbitrary URLs.
@@ -221,8 +217,9 @@ frontend/
 └── [new] e2e/ project journeys                      browser validation
 docs/projects/
 ├── project-001-parcel-aoi.md                        active plan
-├── project-001-openapi-proposal.yaml                provisional; revise for interactive scope
-└── project-001-mockup.html and PNGs                 revise for interactive scope
+├── project-001-interactive-api-proposal.yaml        current v2 proposal; owner review required
+├── project-001-openapi-proposal.yaml                superseded parcel-only v1 fixture contract
+└── project-001-mockup.html and PNGs                 old scope; refresh before frontend work
 backend-simulator/src/ [modify]                      provisional synthetic routes and fixtures
 backend/ [owner implements]                          provider, validation, state
 docs/requirements/projects-and-aoi.md [revise for confirmed product decisions]
@@ -278,18 +275,19 @@ work and must preserve existing data; normal builds and tests use fixtures.
 
 ## Implementation Plan
 
-1. [in-progress] Consolidate the interactive scope in this active plan. Revise
-   the requirement and functional draft for optional parcels, a rectangle and
-   partial overlap; research and record dated public provider evidence. Update
-   the offline mockup and desktop/mobile previews for the new journey and
-   failure states, and verify responsive, accessible interaction.
-2. [pending] Revise the OpenAPI proposal for tiles, place search, parcel lookup,
+1. [partially complete] Consolidate the interactive scope in this active plan.
+   The accepted requirement and functional draft now cover optional parcels,
+   editable rectangles, and partial overlap; dated provider documentation
+   evidence is recorded. The offline mockup and desktop/mobile previews still
+   show the old parcel-only journey and must be refreshed before frontend work.
+2. [implemented for fixture review; owner contract acceptance pending] Add the
+   separate v2 OpenAPI proposal for tiles, place search, parcel lookup,
    rectangle preview, create and read. Define CRS, comparison, fingerprint,
-   idempotency/recovery, limits, security and errors for owner review. Adapt the
-   simulator with deterministic fictional images, searches, geometry, failures
-   and contract tests. Keep production calls and generated clients blocked
-   until the owner accepts the contract; update the backend queue afterward.
-3. [pending] After contract acceptance, generate the client and implement the
+   idempotency/recovery, limits, security and errors for review. The simulator
+   now has deterministic fictional images, searches, geometry, failures, and
+   contract tests. Keep production calls and generated clients blocked until
+   the owner accepts the v2 contract; update the backend queue afterward.
+3. [blocked until contract acceptance and mockup refresh] Generate the client and implement the
    lazy Angular map, backend-mediated tiles, search and disambiguation, and
    parcel selection by map click and text. Test navigation, accessibility,
    cancellation, ambiguity and provider failure with simulator fixtures.
@@ -333,11 +331,17 @@ work and must preserve existing data; normal builds and tests use fixtures.
 
 ## Result
 
-The prior parcel-based scope was authorized. The interactive revision is
-recorded here for review; the existing parcel-only contract, simulator and
-mockup need revision before they represent it. Contract decisions and the
-owner-owned backend implementation remain pending agreement and delivery.
-`cd backend-simulator && npm run verify` passed (13 tests), and the OpenAPI YAML
-was parsed successfully. `mise run verify` passed before the final simulator
-changes, which were checked separately. No live ULDK request, frontend
-implementation, or real backend/PostgreSQL verification has been run.
+The interactive scope is authorized. The accepted requirement, functional
+draft, dated provider research, v2 contract proposal, and independent synthetic
+simulator routes now reflect it; v1 fixture scenarios remain separate. The
+mockup still requires refresh before frontend work, and the proposed API requires
+owner acceptance before generating clients or making provider calls. The backend
+and PostgreSQL remain owner-owned and are not implemented here.
+
+Backend simulator validation passed all 22 tests, including the interactive
+scenarios and retained v1 cases, with TypeScript and formatting checks. The
+aggregate `mise run verify` passed, including documentation links, backend,
+legacy, requirements, simulator, frontend, Storybook and Playwright checks.
+Non-blocking warnings concerned Compodoc, bundle sizes and Node configuration.
+No live ULDK, UUG, WMS or WMTS request, or real backend and PostgreSQL
+integration verification, has been performed.
