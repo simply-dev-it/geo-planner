@@ -3,8 +3,8 @@
 ## Status And Decision Trace
 
 - Status: DEFERRED
-- Evidence reconstructed: 2026-07-28 from the checked-in prototype and
-  configuration; no fresh live-service validation was performed.
+- Evidence checked: 2026-11-17 against the checked-in prototype and the official
+  ULDK operation documentation; no fresh live-service validation was performed.
 - Question: which exact public operations, layers, formats, and legacy failure
   behavior must inform replacement ULDK, WMS, and APP adapters?
 - Completed outputs: [ACQUIRE-001](../requirements/layer-acquisition.md) owns
@@ -40,7 +40,7 @@ availability, fair-use, or rate-limit obligations.
 
 | Artifact | Endpoint/config key | Operation and request inputs | Expected response | Current failure policy |
 | --- | --- | --- | --- | --- |
-| Parcel WKT files | `services.uldk` | `GetParcelByIdOrNr`; `id=<precinctId>.<parcel.number>`; `result=geom_wkt,teryt,parcel`; `srid` derived from project CRS | Text containing geometry and parcel identity | Required; a failed request stops refresh and the temporary file is discarded |
+| Parcel WKT files | `services.uldk` | HTTP GET `GetParcelByIdOrNr`; `id=<precinctId>.<parcel.number>`; `result=geom_wkt,teryt,parcel`; `srid` derived from project CRS | Text containing geometry and parcel identity | Required; a failed request stops refresh and the temporary file is discarded |
 | Planning GML | `plan.url` | Direct HTTPS download with no query contract in the prototype | Configured APP namespace GML/XML document | Required; a failed request stops refresh |
 | Ortho JPEG | `services.ortho` | WMS 1.3.0 `GetMap`; layer `Raster`; empty style; configured CRS, axis-ordered bbox, width, and height; `image/jpeg`; opaque | JPEG raster | Required |
 | EGiB reference PNG | `services.egib` | WMS 1.3.0 `GetMap`; layers `budynki,numery_dzialek`; configured spatial inputs; `image/png`; transparent | PNG raster | Required |
@@ -54,6 +54,25 @@ All downloads use `curl` redirects, bounded retry counts, temporary files, and
 per-file atomic promotion. The prototype does not request capabilities, validate
 response MIME/signatures or OGC exception bodies, capture HTTP/provider
 metadata, checksum artifacts, or create a structured acquisition record.
+
+## ULDK Operation Documentation Check (2026-11-17)
+
+The official [ULDK operation description](https://uldk.gugik.gov.pl/opis.html)
+documents `GetParcelByIdOrNr` as an HTTP GET operation with an `id`, requested
+`result` fields, and optional `srid` (whose documented default is `EPSG:2180`).
+The legacy request asks for `geom_wkt,teryt,parcel`; the documented response
+starts with a result count and then returns requested parcel records. The
+operation accepts parcel identifiers as well as parcel-number lookup forms;
+precinct/name-based lookup can be ambiguous and must not be used as evidence
+that a full identifier resolved uniquely. The documentation check did not send
+a live request, validate current response bytes, or verify current service
+availability, license, attribution, rate limits, or CRS axis behavior.
+
+For project creation, this source operation is an adapter input, not a suitable
+product API contract by itself. A backend-facing contract should expose typed
+preview/create/read semantics, explicit CRS and coordinate order, provenance,
+structured partial/error results, and revalidation behavior without accepting
+arbitrary provider URLs or leaking raw provider query syntax to Angular.
 
 ## Evidence in the Repository
 
@@ -82,7 +101,8 @@ as a dated visual snapshot rather than a complete national or legal record.
 
 ## Official References
 
-- [GUGiK ULDK documentation](https://uldk.gugik.gov.pl/)
+- [GUGiK ULDK operation documentation](https://uldk.gugik.gov.pl/opis.html)
+- [GUGiK ULDK service](https://uldk.gugik.gov.pl/)
 - [GUGiK EGiB and KIEG overview](https://www.geoportal.gov.pl/pl/dane/ewidencja-gruntow-i-budynkow-egib/)
 - [Polish national geoportal](https://www.geoportal.gov.pl/)
 - [OGC Web Map Service standard](https://www.ogc.org/standard/wms/)

@@ -1,0 +1,548 @@
+openapi: 3.1.0
+info:
+  title: Geo Planner Project API (Proposal)
+  version: 0.1.0
+  description: |
+    PROPOSAL ONLY: derived from PROJECT-001, the legacy ULDK lookup, and
+    synthetic offline fixtures. It is not an accepted production contract.
+    Agree its authoritative repository location, geometry representation,
+    fingerprint canonicalization, idempotency retention/recovery, limits,
+    authentication, and source-date semantics with the owner before generating
+    a client or implementing production calls. The loopback simulator is not
+    evidence of provider access or durable storage.
+x-contract-status: proposed
+servers:
+  - url: /api/v1
+    description: Proposed same-origin product API base path.
+tags:
+  - name: Projects
+    description: Parcel-based project preview, creation, and reopen operations.
+paths:
+  /projects/previews:
+    post:
+      tags: [Projects]
+      operationId: previewProjectArea
+      summary: Resolve parcel identifiers and preview a bounded project area.
+      description: |
+        This request does not create or persist a project. A `ready` result is
+        complete, unambiguous, within the accepted spatial limits, and includes
+        a fingerprint. `incomplete` and `outside_limits` results never include
+        a usable fingerprint and cannot be submitted for creation. Production
+        implementations resolve full identifiers through the owner-controlled
+        ULDK adapter; clients cannot provide a provider URL. Geometry in an
+        incomplete response represents only the resolved subset and must not be
+        presented as the complete selected subject.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PreviewRequest'
+      responses:
+        '200':
+          description: A complete, partial, ambiguous, or excessive preview.
+          headers:
+            X-Correlation-Id:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Preview'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '413':
+          $ref: '#/components/responses/RequestTooLarge'
+        '502':
+          $ref: '#/components/responses/ProviderResponseInvalid'
+        '503':
+          $ref: '#/components/responses/ProviderUnavailable'
+        '504':
+          $ref: '#/components/responses/ProviderTimeout'
+  /projects:
+    post:
+      tags: [Projects]
+      operationId: createProject
+      summary: Re-resolve and create a project from a matching preview.
+      description: |
+        The backend resolves the full identifiers again, applies the same
+        canonical comparison used for the preview, and persists only a complete
+        matching result. The proposed idempotency behavior binds a key to the
+        normalized request: same-key/same-payload replay returns the original
+        result; same-key/different-payload returns `IDEMPOTENCY_CONFLICT`.
+        Durable retention and browser-reload recovery are still owner decisions.
+        A timeout does not establish whether the write committed.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProjectRequest'
+      responses:
+        '201':
+          description: Project created.
+          headers:
+            Location:
+              description: Stable same-origin address of the created project.
+              schema:
+                type: string
+                format: uri-reference
+            X-Correlation-Id:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '200':
+          description: Original result replayed for the same idempotency key and payload.
+          headers:
+            Idempotency-Replayed:
+              description: Indicates that the stored result was replayed.
+              schema:
+                type: boolean
+                const: true
+            Location:
+              description: Stable same-origin address of the existing project.
+              schema:
+                type: string
+                format: uri-reference
+            X-Correlation-Id:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '413':
+          $ref: '#/components/responses/RequestTooLarge'
+        '409':
+          description: Preview changed during revalidation or key is bound to another payload.
+          headers:
+            X-Correlation-Id:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '422':
+          description: Parcel resolution is incomplete or its subject/context exceeds limits.
+          headers:
+            X-Correlation-Id:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '502':
+          $ref: '#/components/responses/ProviderResponseInvalid'
+        '503':
+          $ref: '#/components/responses/ProviderUnavailable'
+        '504':
+          $ref: '#/components/responses/ProviderTimeout'
+  /projects/{projectId}:
+    get:
+      tags: [Projects]
+      operationId: getProject
+      summary: Reopen a persisted project by its stable identifier.
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Persisted project and accepted spatial snapshot.
+          headers:
+            X-Correlation-Id:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: No project exists for the supplied identifier.
+          headers:
+            X-Correlation-Id:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+components:
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: |
+        Client-generated key for one immutable create attempt. The proposed
+        durable scope, retention duration, and recovery after browser reload
+        require owner agreement.
+      schema:
+        type: string
+        minLength: 16
+        maxLength: 128
+  headers:
+    CorrelationId:
+      description: Request correlation identifier, echoed when supplied or generated by the server.
+      schema:
+        type: string
+        maxLength: 128
+  responses:
+    BadRequest:
+      description: Invalid JSON, field values, or request limits.
+      headers:
+        X-Correlation-Id:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    ProviderResponseInvalid:
+      description: Provider response was malformed, ambiguous in CRS/axis order, or unusable.
+      headers:
+        X-Correlation-Id:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    ProviderUnavailable:
+      description: Parcel source could not provide a usable response.
+      headers:
+        X-Correlation-Id:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    ProviderTimeout:
+      description: Parcel source exceeded the bounded operation time.
+      headers:
+        X-Correlation-Id:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    RequestTooLarge:
+      description: Request body exceeds the proposed 16 KiB limit.
+      headers:
+        X-Correlation-Id:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+  schemas:
+    PreviewRequest:
+      type: object
+      additionalProperties: false
+      required: [parcelIds, bufferMetres]
+      properties:
+        parcelIds:
+          type: array
+          minItems: 1
+          maxItems: 100
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/ParcelId'
+        bufferMetres:
+          type: number
+          minimum: 0
+          maximum: 500
+          default: 100
+    CreateProjectRequest:
+      type: object
+      additionalProperties: false
+      required: [name, parcelIds, bufferMetres, previewFingerprint]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        parcelIds:
+          type: array
+          minItems: 1
+          maxItems: 100
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/ParcelId'
+        bufferMetres:
+          type: number
+          minimum: 0
+          maximum: 500
+        previewFingerprint:
+          $ref: '#/components/schemas/PreviewFingerprint'
+    ParcelId:
+      type: string
+      minLength: 1
+      maxLength: 64
+      description: |
+        Full cadastral parcel identifier accepted by the configured ULDK adapter.
+        Precinct-name/parcel-number queries are intentionally excluded because
+        the source documents that they can produce multiple matches.
+    PreviewFingerprint:
+      type: string
+      pattern: '^v1:sha256:[a-f0-9]{64}$'
+      description: |
+        Opaque versioned result digest. The exact canonical geometry encoding,
+        normalization precision, ring/component ordering, and included fields
+        require owner agreement before production implementation.
+      example: 'v1:sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
+    Preview:
+      type: object
+      additionalProperties: false
+      required:
+        - status
+        - issues
+        - parcels
+        - subjectGeometry
+        - bufferedGeometry
+        - subjectExtent
+        - projectCrs
+        - axisOrder
+        - acquisitionExtent
+        - provenance
+        - previewFingerprint
+      properties:
+        status:
+          type: string
+          enum: [ready, incomplete, outside_limits]
+        issues:
+          type: array
+          items:
+            type: string
+            enum:
+              - UNRESOLVED_PARCEL
+              - AMBIGUOUS_PARCEL
+              - SUBJECT_EXTENT_EXCEEDED
+              - BUFFERED_EXTENT_EXCEEDED
+        parcels:
+          type: array
+          items:
+            $ref: '#/components/schemas/ParcelResolution'
+        subjectGeometry:
+          oneOf:
+            - $ref: '#/components/schemas/SpatialGeometry'
+            - type: 'null'
+          description: Union of resolved subjects; partial when status is incomplete.
+        bufferedGeometry:
+          oneOf:
+            - $ref: '#/components/schemas/SpatialGeometry'
+            - type: 'null'
+          description: Buffered geometry of the resolved subject parts, if any.
+        subjectExtent:
+          oneOf:
+            - $ref: '#/components/schemas/SpatialExtent'
+            - type: 'null'
+          description: Axis-aligned metric envelope of the subject geometry.
+        projectCrs:
+          type: string
+          const: EPSG:2180
+        axisOrder:
+          type: string
+          const: easting-northing
+        acquisitionExtent:
+          oneOf:
+            - $ref: '#/components/schemas/SpatialExtent'
+            - type: 'null'
+          description: |
+            Axis-aligned envelope of buffered geometry. For disconnected parcels,
+            the unused gaps are included in width, height, and envelope area and
+            remain visible in the preview. The exact limit interpretation is
+            proposed for owner agreement.
+        provenance:
+          $ref: '#/components/schemas/Provenance'
+        previewFingerprint:
+          oneOf:
+            - $ref: '#/components/schemas/PreviewFingerprint'
+            - type: 'null'
+          description: Present only when status is ready and issues is empty.
+    ParcelResolution:
+      type: object
+      additionalProperties: false
+      required: [inputId, status, resolvedId, candidateIds, geometry]
+      properties:
+        inputId:
+          $ref: '#/components/schemas/ParcelId'
+        status:
+          type: string
+          enum: [resolved, unresolved, ambiguous]
+        resolvedId:
+          oneOf:
+            - $ref: '#/components/schemas/ParcelId'
+            - type: 'null'
+        candidateIds:
+          type: array
+          items:
+            $ref: '#/components/schemas/ParcelId'
+        geometry:
+          oneOf:
+            - $ref: '#/components/schemas/SpatialGeometry'
+            - type: 'null'
+    SpatialGeometry:
+      type: object
+      additionalProperties: false
+      required: [type, coordinates, crs, axisOrder]
+      description: |
+        MultiPolygon coordinates in the project's metric CRS, not RFC 7946
+        longitude/latitude GeoJSON. This avoids silently implying EPSG:4326;
+        consumers must honor the explicit CRS and axis order.
+      properties:
+        type:
+          type: string
+          const: MultiPolygon
+        coordinates:
+          type: array
+          items:
+            type: array
+            items:
+              type: array
+              items:
+                type: array
+                minItems: 2
+                maxItems: 2
+                items:
+                  type: number
+        crs:
+          type: string
+          const: EPSG:2180
+        axisOrder:
+          type: string
+          const: easting-northing
+    SpatialExtent:
+      type: object
+      additionalProperties: false
+      required: [crs, axisOrder, bounds, widthMetres, heightMetres, envelopeAreaSquareMetres]
+      description: |
+        Axis-aligned envelope metrics in the explicitly declared metric CRS.
+        The proposed 2 km width, 2 km height, and 4 km² limits apply to the
+        subject envelope and buffered acquisition envelope, not net polygon
+        area; disconnected gaps therefore count toward the limits.
+      properties:
+        crs:
+          type: string
+          const: EPSG:2180
+        axisOrder:
+          type: string
+          const: minEasting-minNorthing-maxEasting-maxNorthing
+        bounds:
+          type: array
+          minItems: 4
+          maxItems: 4
+          items:
+            type: number
+        widthMetres:
+          type: number
+          minimum: 0
+        heightMetres:
+          type: number
+          minimum: 0
+        envelopeAreaSquareMetres:
+          type: number
+          minimum: 0
+    Provenance:
+      type: object
+      additionalProperties: false
+      required: [provider, operation, retrievedAt, sourceDataDate, attribution]
+      properties:
+        provider:
+          type: string
+          const: GUGIK_ULDK
+        operation:
+          type: string
+          const: GetParcelByIdOrNr
+        retrievedAt:
+          type: string
+          format: date-time
+          description: Backend observation time, not the source dataset's publication date.
+        sourceDataDate:
+          oneOf:
+            - type: string
+              format: date
+            - type: 'null'
+        attribution:
+          type: string
+        limitations:
+          type: array
+          items:
+            type: string
+    Project:
+      type: object
+      additionalProperties: false
+      required: [id, name, createdAt, parcelIds, bufferMetres, preview]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        parcelIds:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/ParcelId'
+        bufferMetres:
+          type: number
+          minimum: 0
+          maximum: 500
+        preview:
+          $ref: '#/components/schemas/Preview'
+    Problem:
+      type: object
+      description: RFC 9457 problem details with stable application extensions.
+      required: [type, title, status, errorCode]
+      properties:
+        type:
+          type: string
+          format: uri-reference
+        title:
+          type: string
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri-reference
+        errorCode:
+          type: string
+          enum:
+            - INVALID_REQUEST
+            - UNRESOLVED_PARCEL
+            - AMBIGUOUS_PARCEL
+            - EXTENT_EXCEEDED
+            - PREVIEW_STALE
+            - IDEMPOTENCY_CONFLICT
+            - NOT_FOUND
+            - REQUEST_TOO_LARGE
+            - SOURCE_UNAVAILABLE
+            - SOURCE_TIMEOUT
+            - SOURCE_RESPONSE_INVALID
+        fieldErrors:
+          type: array
+          items:
+            type: object
+            required: [field, message]
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+        parcelIds:
+          type: array
+          items:
+            $ref: '#/components/schemas/ParcelId'
