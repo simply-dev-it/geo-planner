@@ -1,0 +1,45 @@
+# Manual public-provider examples. These are external read-only calls.
+# Never run as part of normal tests/builds. No credentials or local registry.
+# Source mapping, axes, constraints and product contract:
+# ../docs/architecture/public-api-integration.md
+# Encoded FILTER values intentionally preserve verified unqualified property names.
+
+### Locality candidates (UUG)
+GET https://services.gugik.gov.pl/uug/?request=GetAddress&address=Marki
+
+### Street within a locality (UUG)
+GET https://services.gugik.gov.pl/uug/?request=GetAddress&address=Marki%2C+Andersa
+
+### Same text can mean a locality; do not relabel as street
+GET https://services.gugik.gov.pl/uug/?request=GetAddress&address=Lipowa
+
+### Street names nationwide, COUNT=2
+GET https://mapy.geoportal.gov.pl/wss/ext/wfs/KrajowaIntegracjaNumeracjiAdresowej?service=WFS&request=GetFeature&version=2.0.0&typeNames=adresyUlice%3AA08_Ulice&count=2&srsName=urn%3Aogc%3Adef%3Acrs%3AEPSG%3A%3A2180&filter=%3Cfes%3AFilter+xmlns%3Afes%3D%22http%3A%2F%2Fwww.opengis.net%2Ffes%2F2.0%22+xmlns%3AadresyUlice%3D%22https%3A%2F%2Fmapy.geoportal.gov.pl%2Fwss%2Fext%2Fwfs%2FKrajowaIntegracjaNumeracjiAdresowej%22%3E%3Cfes%3APropertyIsLike+wildCard%3D%22%2A%22+singleChar%3D%22%3F%22+escapeChar%3D%22%21%22+matchCase%3D%22false%22%3E%3Cfes%3AValueReference%3ENAZWA_ULICY%3C%2Ffes%3AValueReference%3E%3Cfes%3ALiteral%3E%2ALipowa%2A%3C%2Ffes%3ALiteral%3E%3C%2Ffes%3APropertyIsLike%3E%3C%2Ffes%3AFilter%3E
+
+### Street name and mazowieckie, COUNT=2
+GET https://mapy.geoportal.gov.pl/wss/ext/wfs/KrajowaIntegracjaNumeracjiAdresowej?service=WFS&request=GetFeature&version=2.0.0&typeNames=adresyUlice%3AA08_Ulice&count=2&srsName=urn%3Aogc%3Adef%3Acrs%3AEPSG%3A%3A2180&filter=%3Cfes%3AFilter+xmlns%3Afes%3D%22http%3A%2F%2Fwww.opengis.net%2Ffes%2F2.0%22+xmlns%3AadresyUlice%3D%22https%3A%2F%2Fmapy.geoportal.gov.pl%2Fwss%2Fext%2Fwfs%2FKrajowaIntegracjaNumeracjiAdresowej%22%3E%3Cfes%3AAnd%3E%3Cfes%3APropertyIsLike+wildCard%3D%22%2A%22+singleChar%3D%22%3F%22+escapeChar%3D%22%21%22+matchCase%3D%22false%22%3E%3Cfes%3AValueReference%3ENAZWA_ULICY%3C%2Ffes%3AValueReference%3E%3Cfes%3ALiteral%3E%2ALipowa%2A%3C%2Ffes%3ALiteral%3E%3C%2Ffes%3APropertyIsLike%3E%3Cfes%3APropertyIsLike+wildCard%3D%22%2A%22+singleChar%3D%22%3F%22+escapeChar%3D%22%21%22%3E%3Cfes%3AValueReference%3EID_GMINY%3C%2Ffes%3AValueReference%3E%3Cfes%3ALiteral%3E14%2A%3C%2Ffes%3ALiteral%3E%3C%2Ffes%3APropertyIsLike%3E%3C%2Ffes%3AAnd%3E%3C%2Ffes%3AFilter%3E
+
+### Commune code + street, COUNT=1
+GET https://mapy.geoportal.gov.pl/wss/ext/wfs/KrajowaIntegracjaNumeracjiAdresowej?service=WFS&version=2.0.0&request=GetFeature&typeNames=adresyUlice%3AA08_Ulice&count=1&startIndex=0&sortBy=ID_IIP&filter=%3Cfes%3AFilter+xmlns%3Afes%3D%22http%3A%2F%2Fwww.opengis.net%2Ffes%2F2.0%22+xmlns%3Agml%3D%22http%3A%2F%2Fwww.opengis.net%2Fgml%2F3.2%22%3E%3Cfes%3AAnd%3E%3Cfes%3APropertyIsLike+wildCard%3D%22%2A%22+singleChar%3D%22%3F%22+escapeChar%3D%22%21%22+matchCase%3D%22false%22%3E%3Cfes%3AValueReference%3ENAZWA_ULICY%3C%2Ffes%3AValueReference%3E%3Cfes%3ALiteral%3E%2ALipowa%2A%3C%2Ffes%3ALiteral%3E%3C%2Ffes%3APropertyIsLike%3E%3Cfes%3APropertyIsEqualTo%3E%3Cfes%3AValueReference%3EID_GMINY%3C%2Ffes%3AValueReference%3E%3Cfes%3ALiteral%3E1420032%3C%2Ffes%3ALiteral%3E%3C%2Ffes%3APropertyIsEqualTo%3E%3C%2Ffes%3AAnd%3E%3C%2Ffes%3AFilter%3E&srsName=urn%3Aogc%3Adef%3Acrs%3AEPSG%3A%3A2180
+
+### Commune/locality names + street, COUNT=1
+GET https://mapy.geoportal.gov.pl/wss/ext/wfs/KrajowaIntegracjaNumeracjiAdresowej?service=WFS&version=2.0.0&request=GetFeature&typeNames=adresyUlice%3AA08_Ulice&count=1&startIndex=0&sortBy=ID_IIP&filter=%3Cfes%3AFilter+xmlns%3Afes%3D%22http%3A%2F%2Fwww.opengis.net%2Ffes%2F2.0%22+xmlns%3Agml%3D%22http%3A%2F%2Fwww.opengis.net%2Fgml%2F3.2%22%3E%3Cfes%3AAnd%3E%3Cfes%3APropertyIsLike+wildCard%3D%22%2A%22+singleChar%3D%22%3F%22+escapeChar%3D%22%21%22+matchCase%3D%22false%22%3E%3Cfes%3AValueReference%3ENAZWA_ULICY%3C%2Ffes%3AValueReference%3E%3Cfes%3ALiteral%3E%2ALipowa%2A%3C%2Ffes%3ALiteral%3E%3C%2Ffes%3APropertyIsLike%3E%3Cfes%3APropertyIsLike+wildCard%3D%22%2A%22+singleChar%3D%22%3F%22+escapeChar%3D%22%21%22+matchCase%3D%22false%22%3E%3Cfes%3AValueReference%3ENAZWA_GMINY%3C%2Ffes%3AValueReference%3E%3Cfes%3ALiteral%3EBaboszewo%3C%2Ffes%3ALiteral%3E%3C%2Ffes%3APropertyIsLike%3E%3Cfes%3APropertyIsLike+wildCard%3D%22%2A%22+singleChar%3D%22%3F%22+escapeChar%3D%22%21%22+matchCase%3D%22false%22%3E%3Cfes%3AValueReference%3ENAZWA_MIEJSCOWOSCI%3C%2Ffes%3AValueReference%3E%3Cfes%3ALiteral%3EBaboszewo%3C%2Ffes%3ALiteral%3E%3C%2Ffes%3APropertyIsLike%3E%3C%2Ffes%3AAnd%3E%3C%2Ffes%3AFilter%3E&srsName=urn%3Aogc%3Adef%3Acrs%3AEPSG%3A%3A2180
+
+### Street + BBOX, COUNT=1
+GET https://mapy.geoportal.gov.pl/wss/ext/wfs/KrajowaIntegracjaNumeracjiAdresowej?service=WFS&version=2.0.0&request=GetFeature&typeNames=adresyUlice%3AA08_Ulice&count=1&startIndex=0&sortBy=ID_IIP&filter=%3Cfes%3AFilter+xmlns%3Afes%3D%22http%3A%2F%2Fwww.opengis.net%2Ffes%2F2.0%22+xmlns%3Agml%3D%22http%3A%2F%2Fwww.opengis.net%2Fgml%2F3.2%22%3E%3Cfes%3AAnd%3E%3Cfes%3APropertyIsLike+wildCard%3D%22%2A%22+singleChar%3D%22%3F%22+escapeChar%3D%22%21%22+matchCase%3D%22false%22%3E%3Cfes%3AValueReference%3ENAZWA_ULICY%3C%2Ffes%3AValueReference%3E%3Cfes%3ALiteral%3E%2ALipowa%2A%3C%2Ffes%3ALiteral%3E%3C%2Ffes%3APropertyIsLike%3E%3Cfes%3ABBOX%3E%3Cfes%3AValueReference%3EGEOMETRIA%3C%2Ffes%3AValueReference%3E%3Cgml%3AEnvelope+srsName%3D%22urn%3Aogc%3Adef%3Acrs%3AEPSG%3A%3A2180%22%3E%3Cgml%3AlowerCorner%3E534000+585000%3C%2Fgml%3AlowerCorner%3E%3Cgml%3AupperCorner%3E535500+586000%3C%2Fgml%3AupperCorner%3E%3C%2Fgml%3AEnvelope%3E%3C%2Ffes%3ABBOX%3E%3C%2Ffes%3AAnd%3E%3C%2Ffes%3AFilter%3E&srsName=urn%3Aogc%3Adef%3Acrs%3AEPSG%3A%3A2180
+
+### Sorted native continuation, COUNT=1
+GET https://mapy.geoportal.gov.pl/wss/ext/wfs/KrajowaIntegracjaNumeracjiAdresowej?service=WFS&version=2.0.0&request=GetFeature&typeNames=adresyUlice%3AA08_Ulice&count=1&startIndex=1&sortBy=ID_IIP&filter=%3Cfes%3AFilter+xmlns%3Afes%3D%22http%3A%2F%2Fwww.opengis.net%2Ffes%2F2.0%22+xmlns%3Agml%3D%22http%3A%2F%2Fwww.opengis.net%2Fgml%2F3.2%22%3E%3Cfes%3AAnd%3E%3Cfes%3APropertyIsLike+wildCard%3D%22%2A%22+singleChar%3D%22%3F%22+escapeChar%3D%22%21%22+matchCase%3D%22false%22%3E%3Cfes%3AValueReference%3ENAZWA_ULICY%3C%2Ffes%3AValueReference%3E%3Cfes%3ALiteral%3E%2ALipowa%2A%3C%2Ffes%3ALiteral%3E%3C%2Ffes%3APropertyIsLike%3E%3Cfes%3APropertyIsLike+wildCard%3D%22%2A%22+singleChar%3D%22%3F%22+escapeChar%3D%22%21%22+matchCase%3D%22false%22%3E%3Cfes%3AValueReference%3EID_GMINY%3C%2Ffes%3AValueReference%3E%3Cfes%3ALiteral%3E14%2A%3C%2Ffes%3ALiteral%3E%3C%2Ffes%3APropertyIsLike%3E%3C%2Ffes%3AAnd%3E%3C%2Ffes%3AFilter%3E&srsName=urn%3Aogc%3Adef%3Acrs%3AEPSG%3A%3A2180
+
+### Resolve a county human name to TERYT code
+GET https://mapy.geoportal.gov.pl/wss/service/PZGIK/PRG/WFS/AdministrativeBoundaries?service=WFS&version=2.0.0&request=GetFeature&typeNames=ms%3AA02_Granice_powiatow&propertyName=JPT_NAZWA_%2CJPT_KOD_JE&count=2&filter=%3Cfes%3AFilter+xmlns%3Afes%3D%22http%3A%2F%2Fwww.opengis.net%2Ffes%2F2.0%22%3E%3Cfes%3AAnd%3E%3Cfes%3APropertyIsLike+wildCard%3D%22%2A%22+singleChar%3D%22%3F%22+escapeChar%3D%22%21%22+matchCase%3D%22false%22%3E%3Cfes%3AValueReference%3EJPT_NAZWA_%3C%2Ffes%3AValueReference%3E%3Cfes%3ALiteral%3E%2Ap%C5%82o%C5%84ski%2A%3C%2Ffes%3ALiteral%3E%3C%2Ffes%3APropertyIsLike%3E%3Cfes%3APropertyIsLike+wildCard%3D%22%2A%22+singleChar%3D%22%3F%22+escapeChar%3D%22%21%22%3E%3Cfes%3AValueReference%3EJPT_KOD_JE%3C%2Ffes%3AValueReference%3E%3Cfes%3ALiteral%3E14%2A%3C%2Ffes%3ALiteral%3E%3C%2Ffes%3APropertyIsLike%3E%3C%2Ffes%3AAnd%3E%3C%2Ffes%3AFilter%3E
+
+### Sixteen region names/codes, no geometry
+GET https://mapy.geoportal.gov.pl/wss/service/PZGIK/PRG/WFS/AdministrativeBoundaries?service=WFS&version=2.0.0&request=GetFeature&typeNames=ms%3AA01_Granice_wojewodztw&propertyName=JPT_NAZWA_%2CJPT_KOD_JE&count=16
+
+### Official publisher OpenAPI (Core items/paging, not arbitrary attribute filters)
+GET https://ogcapi.geoportal.gov.pl/res/ims/maps/prg_ad/apiFeatures/api?f=json
+
+### Full normalized product contract is maintained in the repository
+# docs/architecture/contracts/interactive-v1.openapi.yaml
+# Do not implement the product API by forwarding upstream bodies unchanged.

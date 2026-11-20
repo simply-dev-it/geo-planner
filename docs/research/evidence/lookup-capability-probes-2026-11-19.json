@@ -1,0 +1,311 @@
+{
+  "observedOn": "2026-11-19",
+  "scope": "Bounded public-source research: at most two features per query, eight filter probes at one feature, 16 region names without geometry; no national street/city acquisition. Failed exploratory queries are retained.",
+  "probes": [
+    {
+      "name": "uug-street-only",
+      "url": "https://services.gugik.gov.pl/uug/?request=GetAddress&address=Lipowa",
+      "status": 200,
+      "contentType": "application/json;",
+      "bytes": 3534,
+      "truncated": false,
+      "sha256": "ae0268389145e6dd3d66fb9acfa17eaed5d4311a50f458718be6139d4bdf91a7"
+    },
+    {
+      "name": "uug-city",
+      "url": "https://services.gugik.gov.pl/uug/?request=GetAddress&address=Marki",
+      "status": 200,
+      "contentType": "application/json;",
+      "bytes": 2934,
+      "truncated": false,
+      "sha256": "ae91ad9ac829f1527be32b2f011aab278de23d831a8b53b51fd8afb2b8971bf0"
+    },
+    {
+      "name": "uug-city-street",
+      "url": "https://services.gugik.gov.pl/uug/?request=GetAddress&address=Marki%2C+Andersa",
+      "status": 200,
+      "contentType": "application/json;",
+      "bytes": 652,
+      "truncated": false,
+      "sha256": "6f6ca433c1e0fdc45d440a6520df73b25927663f2ff1000e81b5ffa5eb898b2a"
+    },
+    {
+      "name": "prg-openapi",
+      "url": "https://ogcapi.geoportal.gov.pl/res/ims/maps/prg_ad/apiFeatures/api?f=json",
+      "status": 200,
+      "contentType": "application/vnd.oai.openapi+json;version=3.0",
+      "bytes": 11665,
+      "truncated": false,
+      "sha256": "10c25b46e4f6859fe4eac2c3582c00b903c9ef5d9411415c69988b935d206ab5"
+    },
+    {
+      "name": "prg-sample",
+      "url": "https://ogcapi.geoportal.gov.pl/res/ims/maps/prg_ad/apiFeatures/collections/Ulica/items?f=json&limit=1",
+      "status": 200,
+      "contentType": "application/geo+json",
+      "bytes": 2292,
+      "truncated": false,
+      "sha256": "9044a1a7141a83c3d77d0fea9c6dd16297abec76ba0bc23b862668d44f22128f"
+    },
+    {
+      "name": "prg-queryables",
+      "url": "https://ogcapi.geoportal.gov.pl/res/ims/maps/prg_ad/apiFeatures/collections/Ulica/queryables?f=json",
+      "status": 200,
+      "contentType": "application/json",
+      "bytes": 130,
+      "truncated": false,
+      "sha256": "d0c80496c7ab21045906194f104dc2ae7a156f19b86cfc5a59793a23da50e628"
+    },
+    {
+      "name": "prg-wfs-capabilities",
+      "url": "https://mapy.geoportal.gov.pl/wss/ext/wfs/KrajowaIntegracjaNumeracjiAdresowej?service=WFS&request=GetCapabilities&version=2.0.0",
+      "status": 200,
+      "contentType": "application/xml",
+      "bytes": 95631,
+      "truncated": false,
+      "sha256": "b76651a592896faca08619dcbdc9b936ffdf03074b68085e361d2acaba845a33"
+    },
+    {
+      "name": "prg-name-filter",
+      "url": "https://ogcapi.geoportal.gov.pl/res/ims/maps/prg_ad/apiFeatures/collections/Ulica/items?f=json&limit=2&nazwaUlicy=Lipowa",
+      "error": "HTTP Error 400: Bad Request"
+    },
+    {
+      "name": "prg-street-schema",
+      "url": "https://mapy.geoportal.gov.pl/wss/ext/wfs/KrajowaIntegracjaNumeracjiAdresowej?service=WFS&request=DescribeFeatureType&version=2.0.0&typeNames=adresyUlice%3AA08_Ulice",
+      "status": 200,
+      "bytes": 1808,
+      "contentType": "application/gml+xml; version=3.2",
+      "truncated": false,
+      "sha256": "a631912ae01fbf69ad264e50590c3cb1eaa947e4b086fd81e84af261d39ed217"
+    },
+    {
+      "name": "prg-street-sample",
+      "url": "https://mapy.geoportal.gov.pl/wss/ext/wfs/KrajowaIntegracjaNumeracjiAdresowej?service=WFS&request=GetFeature&version=2.0.0&typeNames=adresyUlice%3AA08_Ulice&count=1&outputFormat=application%2Fjson&srsName=EPSG%3A3857",
+      "error": "HTTP Error 400: Bad Request"
+    },
+    {
+      "name": "prg-lipowa-national",
+      "url": "https://mapy.geoportal.gov.pl/wss/ext/wfs/KrajowaIntegracjaNumeracjiAdresowej?service=WFS&request=GetFeature&version=2.0.0&typeNames=adresyUlice%3AA08_Ulice&count=2&srsName=urn%3Aogc%3Adef%3Acrs%3AEPSG%3A%3A2180&filter=%3Cfes%3AFilter+xmlns%3Afes%3D%22http%3A%2F%2Fwww.opengis.net%2Ffes%2F2.0%22+xmlns%3AadresyUlice%3D%22https%3A%2F%2Fmapy.geoportal.gov.pl%2Fwss%2Fext%2Fwfs%2FKrajowaIntegracjaNumeracjiAdresowej%22%3E%3Cfes%3APropertyIsLike+wildCard%3D%22%2A%22+singleChar%3D%22%3F%22+escapeChar%3D%22%21%22+matchCase%3D%22false%22%3E%3Cfes%3AValueReference%3EadresyUlice%3ANAZWA_ULICY%3C%2Ffes%3AValueReference%3E%3Cfes%3ALiteral%3E%2ALipowa%2A%3C%2Ffes%3ALiteral%3E%3C%2Ffes%3APropertyIsLike%3E%3C%2Ffes%3AFilter%3E",
+      "error": "HTTP Error 400: Bad Request",
+      "status": 400,
+      "sha256": "fbb950cd65ef8f7563a6dba77a1c3abd6b6963730d235beac81f6c70b01a2105"
+    },
+    {
+      "name": "prg-lipowa-region",
+      "url": "https://mapy.geoportal.gov.pl/wss/ext/wfs/KrajowaIntegracjaNumeracjiAdresowej?service=WFS&request=GetFeature&version=2.0.0&typeNames=adresyUlice%3AA08_Ulice&count=2&srsName=urn%3Aogc%3Adef%3Acrs%3AEPSG%3A%3A2180&filter=%3Cfes%3AFilter+xmlns%3Afes%3D%22http%3A%2F%2Fwww.opengis.net%2Ffes%2F2.0%22+xmlns%3AadresyUlice%3D%22https%3A%2F%2Fmapy.geoportal.gov.pl%2Fwss%2Fext%2Fwfs%2FKrajowaIntegracjaNumeracjiAdresowej%22%3E%3Cfes%3AAnd%3E%3Cfes%3APropertyIsLike+wildCard%3D%22%2A%22+singleChar%3D%22%3F%22+escapeChar%3D%22%21%22+matchCase%3D%22false%22%3E%3Cfes%3AValueReference%3EadresyUlice%3ANAZWA_ULICY%3C%2Ffes%3AValueReference%3E%3Cfes%3ALiteral%3E%2ALipowa%2A%3C%2Ffes%3ALiteral%3E%3C%2Ffes%3APropertyIsLike%3E%3Cfes%3APropertyIsLike+wildCard%3D%22%2A%22+singleChar%3D%22%3F%22+escapeChar%3D%22%21%22%3E%3Cfes%3AValueReference%3EadresyUlice%3AID_GMINY%3C%2Ffes%3AValueReference%3E%3Cfes%3ALiteral%3E14%2A%3C%2Ffes%3ALiteral%3E%3C%2Ffes%3APropertyIsLike%3E%3C%2Ffes%3AAnd%3E%3C%2Ffes%3AFilter%3E",
+      "error": "HTTP Error 400: Bad Request",
+      "status": 400,
+      "sha256": "fbb950cd65ef8f7563a6dba77a1c3abd6b6963730d235beac81f6c70b01a2105"
+    },
+    {
+      "name": "prg-lipowa-national-unqualified",
+      "url": "https://mapy.geoportal.gov.pl/wss/ext/wfs/KrajowaIntegracjaNumeracjiAdresowej?service=WFS&request=GetFeature&version=2.0.0&typeNames=adresyUlice%3AA08_Ulice&count=2&srsName=urn%3Aogc%3Adef%3Acrs%3AEPSG%3A%3A2180&filter=%3Cfes%3AFilter+xmlns%3Afes%3D%22http%3A%2F%2Fwww.opengis.net%2Ffes%2F2.0%22+xmlns%3AadresyUlice%3D%22https%3A%2F%2Fmapy.geoportal.gov.pl%2Fwss%2Fext%2Fwfs%2FKrajowaIntegracjaNumeracjiAdresowej%22%3E%3Cfes%3APropertyIsLike+wildCard%3D%22%2A%22+singleChar%3D%22%3F%22+escapeChar%3D%22%21%22+matchCase%3D%22false%22%3E%3Cfes%3AValueReference%3ENAZWA_ULICY%3C%2Ffes%3AValueReference%3E%3Cfes%3ALiteral%3E%2ALipowa%2A%3C%2Ffes%3ALiteral%3E%3C%2Ffes%3APropertyIsLike%3E%3C%2Ffes%3AFilter%3E",
+      "status": 200,
+      "bytes": 3557,
+      "contentType": "application/gml+xml; version=3.2",
+      "truncated": false,
+      "sha256": "3a611661119ff2eb26ed661c65c1f78d5c9178f04bf3a14687f28922f34f38eb"
+    },
+    {
+      "name": "prg-lipowa-region-unqualified",
+      "url": "https://mapy.geoportal.gov.pl/wss/ext/wfs/KrajowaIntegracjaNumeracjiAdresowej?service=WFS&request=GetFeature&version=2.0.0&typeNames=adresyUlice%3AA08_Ulice&count=2&srsName=urn%3Aogc%3Adef%3Acrs%3AEPSG%3A%3A2180&filter=%3Cfes%3AFilter+xmlns%3Afes%3D%22http%3A%2F%2Fwww.opengis.net%2Ffes%2F2.0%22+xmlns%3AadresyUlice%3D%22https%3A%2F%2Fmapy.geoportal.gov.pl%2Fwss%2Fext%2Fwfs%2FKrajowaIntegracjaNumeracjiAdresowej%22%3E%3Cfes%3AAnd%3E%3Cfes%3APropertyIsLike+wildCard%3D%22%2A%22+singleChar%3D%22%3F%22+escapeChar%3D%22%21%22+matchCase%3D%22false%22%3E%3Cfes%3AValueReference%3ENAZWA_ULICY%3C%2Ffes%3AValueReference%3E%3Cfes%3ALiteral%3E%2ALipowa%2A%3C%2Ffes%3ALiteral%3E%3C%2Ffes%3APropertyIsLike%3E%3Cfes%3APropertyIsLike+wildCard%3D%22%2A%22+singleChar%3D%22%3F%22+escapeChar%3D%22%21%22%3E%3Cfes%3AValueReference%3EID_GMINY%3C%2Ffes%3AValueReference%3E%3Cfes%3ALiteral%3E14%2A%3C%2Ffes%3ALiteral%3E%3C%2Ffes%3APropertyIsLike%3E%3C%2Ffes%3AAnd%3E%3C%2Ffes%3AFilter%3E",
+      "status": 200,
+      "bytes": 4310,
+      "contentType": "application/gml+xml; version=3.2",
+      "truncated": false,
+      "sha256": "19378d23c0ff2bd4371d8d1439a1bc10810a6dbf966b7a85d806910fcd0fe542"
+    },
+    {
+      "name": "prg-filter-county",
+      "url": "https://mapy.geoportal.gov.pl/wss/ext/wfs/KrajowaIntegracjaNumeracjiAdresowej?service=WFS&version=2.0.0&request=GetFeature&typeNames=adresyUlice%3AA08_Ulice&count=1&startIndex=0&sortBy=ID_IIP&filter=%3Cfes%3AFilter+xmlns%3Afes%3D%22http%3A%2F%2Fwww.opengis.net%2Ffes%2F2.0%22+xmlns%3Agml%3D%22http%3A%2F%2Fwww.opengis.net%2Fgml%2F3.2%22%3E%3Cfes%3AAnd%3E%3Cfes%3APropertyIsLike+wildCard%3D%22%2A%22+singleChar%3D%22%3F%22+escapeChar%3D%22%21%22+matchCase%3D%22false%22%3E%3Cfes%3AValueReference%3ENAZWA_ULICY%3C%2Ffes%3AValueReference%3E%3Cfes%3ALiteral%3E%2ALipowa%2A%3C%2Ffes%3ALiteral%3E%3C%2Ffes%3APropertyIsLike%3E%3Cfes%3APropertyIsLike+wildCard%3D%22%2A%22+singleChar%3D%22%3F%22+escapeChar%3D%22%21%22+matchCase%3D%22false%22%3E%3Cfes%3AValueReference%3EID_GMINY%3C%2Ffes%3AValueReference%3E%3Cfes%3ALiteral%3E1420%2A%3C%2Ffes%3ALiteral%3E%3C%2Ffes%3APropertyIsLike%3E%3C%2Ffes%3AAnd%3E%3C%2Ffes%3AFilter%3E&srsName=urn%3Aogc%3Adef%3Acrs%3AEPSG%3A%3A2180",
+      "status": 200,
+      "contentType": "application/gml+xml; version=3.2",
+      "bytes": 3197,
+      "truncated": false,
+      "sha256": "5bd08f70c38e08691aa9c065d6c39382291fbe8a37ca0d6c42b8038fff4945a7",
+      "matched": "7",
+      "returned": "1",
+      "propertyNames": [
+        "ID_GMINY",
+        "ID_MIEJSCOWOSCI",
+        "NAZWA_ULICY",
+        "ID_ULICY",
+        "ID_IIP"
+      ]
+    },
+    {
+      "name": "prg-filter-commune",
+      "url": "https://mapy.geoportal.gov.pl/wss/ext/wfs/KrajowaIntegracjaNumeracjiAdresowej?service=WFS&version=2.0.0&request=GetFeature&typeNames=adresyUlice%3AA08_Ulice&count=1&startIndex=0&sortBy=ID_IIP&filter=%3Cfes%3AFilter+xmlns%3Afes%3D%22http%3A%2F%2Fwww.opengis.net%2Ffes%2F2.0%22+xmlns%3Agml%3D%22http%3A%2F%2Fwww.opengis.net%2Fgml%2F3.2%22%3E%3Cfes%3AAnd%3E%3Cfes%3APropertyIsLike+wildCard%3D%22%2A%22+singleChar%3D%22%3F%22+escapeChar%3D%22%21%22+matchCase%3D%22false%22%3E%3Cfes%3AValueReference%3ENAZWA_ULICY%3C%2Ffes%3AValueReference%3E%3Cfes%3ALiteral%3E%2ALipowa%2A%3C%2Ffes%3ALiteral%3E%3C%2Ffes%3APropertyIsLike%3E%3Cfes%3APropertyIsEqualTo%3E%3Cfes%3AValueReference%3EID_GMINY%3C%2Ffes%3AValueReference%3E%3Cfes%3ALiteral%3E1420032%3C%2Ffes%3ALiteral%3E%3C%2Ffes%3APropertyIsEqualTo%3E%3C%2Ffes%3AAnd%3E%3C%2Ffes%3AFilter%3E&srsName=urn%3Aogc%3Adef%3Acrs%3AEPSG%3A%3A2180",
+      "status": 200,
+      "contentType": "application/gml+xml; version=3.2",
+      "bytes": 3471,
+      "truncated": false,
+      "sha256": "f08c624acf1acda1d28f18c68b4e38b94d61a74400541cdfa4b0ac7952f1357c",
+      "matched": "1",
+      "returned": "1",
+      "propertyNames": [
+        "ID_GMINY",
+        "ID_MIEJSCOWOSCI",
+        "NAZWA_ULICY",
+        "ID_ULICY",
+        "ID_IIP"
+      ]
+    },
+    {
+      "name": "prg-filter-locality",
+      "url": "https://mapy.geoportal.gov.pl/wss/ext/wfs/KrajowaIntegracjaNumeracjiAdresowej?service=WFS&version=2.0.0&request=GetFeature&typeNames=adresyUlice%3AA08_Ulice&count=1&startIndex=0&sortBy=ID_IIP&filter=%3Cfes%3AFilter+xmlns%3Afes%3D%22http%3A%2F%2Fwww.opengis.net%2Ffes%2F2.0%22+xmlns%3Agml%3D%22http%3A%2F%2Fwww.opengis.net%2Fgml%2F3.2%22%3E%3Cfes%3AAnd%3E%3Cfes%3APropertyIsLike+wildCard%3D%22%2A%22+singleChar%3D%22%3F%22+escapeChar%3D%22%21%22+matchCase%3D%22false%22%3E%3Cfes%3AValueReference%3ENAZWA_ULICY%3C%2Ffes%3AValueReference%3E%3Cfes%3ALiteral%3E%2ALipowa%2A%3C%2Ffes%3ALiteral%3E%3C%2Ffes%3APropertyIsLike%3E%3Cfes%3APropertyIsEqualTo%3E%3Cfes%3AValueReference%3EID_MIEJSCOWOSCI%3C%2Ffes%3AValueReference%3E%3Cfes%3ALiteral%3E0111515%3C%2Ffes%3ALiteral%3E%3C%2Ffes%3APropertyIsEqualTo%3E%3C%2Ffes%3AAnd%3E%3C%2Ffes%3AFilter%3E&srsName=urn%3Aogc%3Adef%3Acrs%3AEPSG%3A%3A2180",
+      "status": 200,
+      "contentType": "application/gml+xml; version=3.2",
+      "bytes": 3478,
+      "truncated": false,
+      "sha256": "4085e88808c903c2ddb58b16a8594822c292a9f4199b227562d6c10feec8dc98",
+      "matched": "1",
+      "returned": "1",
+      "propertyNames": [
+        "ID_GMINY",
+        "ID_MIEJSCOWOSCI",
+        "NAZWA_ULICY",
+        "ID_ULICY",
+        "ID_IIP"
+      ]
+    },
+    {
+      "name": "prg-filter-street-code",
+      "url": "https://mapy.geoportal.gov.pl/wss/ext/wfs/KrajowaIntegracjaNumeracjiAdresowej?service=WFS&version=2.0.0&request=GetFeature&typeNames=adresyUlice%3AA08_Ulice&count=1&startIndex=0&sortBy=ID_IIP&filter=%3Cfes%3AFilter+xmlns%3Afes%3D%22http%3A%2F%2Fwww.opengis.net%2Ffes%2F2.0%22+xmlns%3Agml%3D%22http%3A%2F%2Fwww.opengis.net%2Fgml%2F3.2%22%3E%3Cfes%3AAnd%3E%3Cfes%3APropertyIsEqualTo%3E%3Cfes%3AValueReference%3EID_ULICY%3C%2Ffes%3AValueReference%3E%3Cfes%3ALiteral%3E11139%3C%2Ffes%3ALiteral%3E%3C%2Ffes%3APropertyIsEqualTo%3E%3Cfes%3APropertyIsEqualTo%3E%3Cfes%3AValueReference%3EID_MIEJSCOWOSCI%3C%2Ffes%3AValueReference%3E%3Cfes%3ALiteral%3E0111515%3C%2Ffes%3ALiteral%3E%3C%2Ffes%3APropertyIsEqualTo%3E%3C%2Ffes%3AAnd%3E%3C%2Ffes%3AFilter%3E&srsName=urn%3Aogc%3Adef%3Acrs%3AEPSG%3A%3A2180",
+      "status": 200,
+      "contentType": "application/gml+xml; version=3.2",
+      "bytes": 3375,
+      "truncated": false,
+      "sha256": "ee16c4fdd8367a7f44d9d84eb1253f848af689bff4adc79b45f43e2ad54b18fd",
+      "matched": "1",
+      "returned": "1",
+      "propertyNames": [
+        "ID_GMINY",
+        "ID_MIEJSCOWOSCI",
+        "NAZWA_ULICY",
+        "ID_ULICY",
+        "ID_IIP"
+      ]
+    },
+    {
+      "name": "prg-filter-names",
+      "url": "https://mapy.geoportal.gov.pl/wss/ext/wfs/KrajowaIntegracjaNumeracjiAdresowej?service=WFS&version=2.0.0&request=GetFeature&typeNames=adresyUlice%3AA08_Ulice&count=1&startIndex=0&sortBy=ID_IIP&filter=%3Cfes%3AFilter+xmlns%3Afes%3D%22http%3A%2F%2Fwww.opengis.net%2Ffes%2F2.0%22+xmlns%3Agml%3D%22http%3A%2F%2Fwww.opengis.net%2Fgml%2F3.2%22%3E%3Cfes%3AAnd%3E%3Cfes%3APropertyIsLike+wildCard%3D%22%2A%22+singleChar%3D%22%3F%22+escapeChar%3D%22%21%22+matchCase%3D%22false%22%3E%3Cfes%3AValueReference%3ENAZWA_ULICY%3C%2Ffes%3AValueReference%3E%3Cfes%3ALiteral%3E%2ALipowa%2A%3C%2Ffes%3ALiteral%3E%3C%2Ffes%3APropertyIsLike%3E%3Cfes%3APropertyIsLike+wildCard%3D%22%2A%22+singleChar%3D%22%3F%22+escapeChar%3D%22%21%22+matchCase%3D%22false%22%3E%3Cfes%3AValueReference%3ENAZWA_GMINY%3C%2Ffes%3AValueReference%3E%3Cfes%3ALiteral%3EBaboszewo%3C%2Ffes%3ALiteral%3E%3C%2Ffes%3APropertyIsLike%3E%3Cfes%3APropertyIsLike+wildCard%3D%22%2A%22+singleChar%3D%22%3F%22+escapeChar%3D%22%21%22+matchCase%3D%22false%22%3E%3Cfes%3AValueReference%3ENAZWA_MIEJSCOWOSCI%3C%2Ffes%3AValueReference%3E%3Cfes%3ALiteral%3EBaboszewo%3C%2Ffes%3ALiteral%3E%3C%2Ffes%3APropertyIsLike%3E%3C%2Ffes%3AAnd%3E%3C%2Ffes%3AFilter%3E&srsName=urn%3Aogc%3Adef%3Acrs%3AEPSG%3A%3A2180",
+      "status": 200,
+      "contentType": "application/gml+xml; version=3.2",
+      "bytes": 3846,
+      "truncated": false,
+      "sha256": "394679f700bc410b40358072b6cff9b0dc6edd8b792bea1a621ccc8a43fa04ed",
+      "matched": "1",
+      "returned": "1",
+      "propertyNames": [
+        "ID_GMINY",
+        "ID_MIEJSCOWOSCI",
+        "NAZWA_ULICY",
+        "ID_ULICY",
+        "ID_IIP"
+      ]
+    },
+    {
+      "name": "prg-filter-bbox",
+      "url": "https://mapy.geoportal.gov.pl/wss/ext/wfs/KrajowaIntegracjaNumeracjiAdresowej?service=WFS&version=2.0.0&request=GetFeature&typeNames=adresyUlice%3AA08_Ulice&count=1&startIndex=0&sortBy=ID_IIP&filter=%3Cfes%3AFilter+xmlns%3Afes%3D%22http%3A%2F%2Fwww.opengis.net%2Ffes%2F2.0%22+xmlns%3Agml%3D%22http%3A%2F%2Fwww.opengis.net%2Fgml%2F3.2%22%3E%3Cfes%3AAnd%3E%3Cfes%3APropertyIsLike+wildCard%3D%22%2A%22+singleChar%3D%22%3F%22+escapeChar%3D%22%21%22+matchCase%3D%22false%22%3E%3Cfes%3AValueReference%3ENAZWA_ULICY%3C%2Ffes%3AValueReference%3E%3Cfes%3ALiteral%3E%2ALipowa%2A%3C%2Ffes%3ALiteral%3E%3C%2Ffes%3APropertyIsLike%3E%3Cfes%3ABBOX%3E%3Cfes%3AValueReference%3EGEOMETRIA%3C%2Ffes%3AValueReference%3E%3Cgml%3AEnvelope+srsName%3D%22urn%3Aogc%3Adef%3Acrs%3AEPSG%3A%3A2180%22%3E%3Cgml%3AlowerCorner%3E534000+585000%3C%2Fgml%3AlowerCorner%3E%3Cgml%3AupperCorner%3E535500+586000%3C%2Fgml%3AupperCorner%3E%3C%2Fgml%3AEnvelope%3E%3C%2Ffes%3ABBOX%3E%3C%2Ffes%3AAnd%3E%3C%2Ffes%3AFilter%3E&srsName=urn%3Aogc%3Adef%3Acrs%3AEPSG%3A%3A2180",
+      "status": 200,
+      "contentType": "application/gml+xml; version=3.2",
+      "bytes": 3626,
+      "truncated": false,
+      "sha256": "3bae72b1bc639547d0538444e351ae3b4f7a99226d8bbcb7031ccf1ef03553d1",
+      "matched": "1",
+      "returned": "1",
+      "propertyNames": [
+        "ID_GMINY",
+        "ID_MIEJSCOWOSCI",
+        "NAZWA_ULICY",
+        "ID_ULICY",
+        "ID_IIP"
+      ]
+    },
+    {
+      "name": "prg-filter-page-one",
+      "url": "https://mapy.geoportal.gov.pl/wss/ext/wfs/KrajowaIntegracjaNumeracjiAdresowej?service=WFS&version=2.0.0&request=GetFeature&typeNames=adresyUlice%3AA08_Ulice&count=1&startIndex=0&sortBy=ID_IIP&filter=%3Cfes%3AFilter+xmlns%3Afes%3D%22http%3A%2F%2Fwww.opengis.net%2Ffes%2F2.0%22+xmlns%3Agml%3D%22http%3A%2F%2Fwww.opengis.net%2Fgml%2F3.2%22%3E%3Cfes%3AAnd%3E%3Cfes%3APropertyIsLike+wildCard%3D%22%2A%22+singleChar%3D%22%3F%22+escapeChar%3D%22%21%22+matchCase%3D%22false%22%3E%3Cfes%3AValueReference%3ENAZWA_ULICY%3C%2Ffes%3AValueReference%3E%3Cfes%3ALiteral%3E%2ALipowa%2A%3C%2Ffes%3ALiteral%3E%3C%2Ffes%3APropertyIsLike%3E%3Cfes%3APropertyIsLike+wildCard%3D%22%2A%22+singleChar%3D%22%3F%22+escapeChar%3D%22%21%22+matchCase%3D%22false%22%3E%3Cfes%3AValueReference%3EID_GMINY%3C%2Ffes%3AValueReference%3E%3Cfes%3ALiteral%3E14%2A%3C%2Ffes%3ALiteral%3E%3C%2Ffes%3APropertyIsLike%3E%3C%2Ffes%3AAnd%3E%3C%2Ffes%3AFilter%3E&srsName=urn%3Aogc%3Adef%3Acrs%3AEPSG%3A%3A2180",
+      "status": 200,
+      "contentType": "application/gml+xml; version=3.2",
+      "bytes": 3407,
+      "truncated": false,
+      "sha256": "2f97b8f944dcc538f3f740d3ce97255a84a5a9333ed34f651e9045d2914510de",
+      "matched": "289",
+      "returned": "1",
+      "propertyNames": [
+        "ID_GMINY",
+        "ID_MIEJSCOWOSCI",
+        "NAZWA_ULICY",
+        "ID_ULICY",
+        "ID_IIP"
+      ]
+    },
+    {
+      "name": "prg-filter-page-two",
+      "url": "https://mapy.geoportal.gov.pl/wss/ext/wfs/KrajowaIntegracjaNumeracjiAdresowej?service=WFS&version=2.0.0&request=GetFeature&typeNames=adresyUlice%3AA08_Ulice&count=1&startIndex=1&sortBy=ID_IIP&filter=%3Cfes%3AFilter+xmlns%3Afes%3D%22http%3A%2F%2Fwww.opengis.net%2Ffes%2F2.0%22+xmlns%3Agml%3D%22http%3A%2F%2Fwww.opengis.net%2Fgml%2F3.2%22%3E%3Cfes%3AAnd%3E%3Cfes%3APropertyIsLike+wildCard%3D%22%2A%22+singleChar%3D%22%3F%22+escapeChar%3D%22%21%22+matchCase%3D%22false%22%3E%3Cfes%3AValueReference%3ENAZWA_ULICY%3C%2Ffes%3AValueReference%3E%3Cfes%3ALiteral%3E%2ALipowa%2A%3C%2Ffes%3ALiteral%3E%3C%2Ffes%3APropertyIsLike%3E%3Cfes%3APropertyIsLike+wildCard%3D%22%2A%22+singleChar%3D%22%3F%22+escapeChar%3D%22%21%22+matchCase%3D%22false%22%3E%3Cfes%3AValueReference%3EID_GMINY%3C%2Ffes%3AValueReference%3E%3Cfes%3ALiteral%3E14%2A%3C%2Ffes%3ALiteral%3E%3C%2Ffes%3APropertyIsLike%3E%3C%2Ffes%3AAnd%3E%3C%2Ffes%3AFilter%3E&srsName=urn%3Aogc%3Adef%3Acrs%3AEPSG%3A%3A2180",
+      "status": 200,
+      "contentType": "application/gml+xml; version=3.2",
+      "bytes": 4212,
+      "truncated": false,
+      "sha256": "d350a04b070ca5701e917b06add3806ccde4502d689be52188e443e6f99cae0b",
+      "matched": "289",
+      "returned": "1",
+      "propertyNames": [
+        "ID_GMINY",
+        "ID_MIEJSCOWOSCI",
+        "NAZWA_ULICY",
+        "ID_ULICY",
+        "ID_IIP"
+      ]
+    },
+    {
+      "name": "admin-capabilities",
+      "url": "https://mapy.geoportal.gov.pl/wss/service/PZGIK/PRG/WFS/AdministrativeBoundaries?service=WFS&version=2.0.0&request=GetCapabilities",
+      "status": 200,
+      "bytes": 76474,
+      "contentType": "text/xml; charset=UTF-8",
+      "truncated": false,
+      "sha256": "2d0db6096925a90bce42258a42bdb1ad679025d640e1050ad282750a0fdc4220"
+    },
+    {
+      "name": "admin-county-schema",
+      "url": "https://mapy.geoportal.gov.pl/wss/service/PZGIK/PRG/WFS/AdministrativeBoundaries?service=WFS&version=2.0.0&request=DescribeFeatureType&typeNames=ms%3AK12_Obszar_dzialania_szefa_obrony_cywilnej_powiatu",
+      "status": 200,
+      "bytes": 3299,
+      "contentType": "application/gml+xml; version=3.2; charset=UTF-8",
+      "truncated": false,
+      "sha256": "8350478989ef0d1474edb7312d56351417de88dc74c8e886297bf41190e93afd"
+    },
+    {
+      "name": "admin-county-name",
+      "url": "https://mapy.geoportal.gov.pl/wss/service/PZGIK/PRG/WFS/AdministrativeBoundaries?service=WFS&version=2.0.0&request=GetFeature&typeNames=ms%3AK12_Obszar_dzialania_szefa_obrony_cywilnej_powiatu&propertyName=JPT_NAZWA_%2CJPT_KOD_JE&count=2&filter=%3Cfes%3AFilter+xmlns%3Afes%3D%22http%3A%2F%2Fwww.opengis.net%2Ffes%2F2.0%22%3E%3Cfes%3AAnd%3E%3Cfes%3APropertyIsLike+wildCard%3D%22%2A%22+singleChar%3D%22%3F%22+escapeChar%3D%22%21%22+matchCase%3D%22false%22%3E%3Cfes%3AValueReference%3EJPT_NAZWA_%3C%2Ffes%3AValueReference%3E%3Cfes%3ALiteral%3E%2Ap%C5%82o%C5%84ski%2A%3C%2Ffes%3ALiteral%3E%3C%2Ffes%3APropertyIsLike%3E%3Cfes%3APropertyIsLike+wildCard%3D%22%2A%22+singleChar%3D%22%3F%22+escapeChar%3D%22%21%22%3E%3Cfes%3AValueReference%3EJPT_KOD_JE%3C%2Ffes%3AValueReference%3E%3Cfes%3ALiteral%3E14%2A%3C%2Ffes%3ALiteral%3E%3C%2Ffes%3APropertyIsLike%3E%3C%2Ffes%3AAnd%3E%3C%2Ffes%3AFilter%3E",
+      "status": 200,
+      "bytes": 852,
+      "contentType": "text/xml; subtype=\"gml/3.2.1\"; charset=UTF-8",
+      "truncated": false,
+      "sha256": "befb4b019f9b2a9b6d2f09835015a333f320da2bc993bc99b0b25dfeb688d643"
+    },
+    {
+      "name": "admin-county-name-exact-layer",
+      "url": "https://mapy.geoportal.gov.pl/wss/service/PZGIK/PRG/WFS/AdministrativeBoundaries?service=WFS&version=2.0.0&request=GetFeature&typeNames=ms%3AA02_Granice_powiatow&propertyName=JPT_NAZWA_%2CJPT_KOD_JE&count=2&filter=%3Cfes%3AFilter+xmlns%3Afes%3D%22http%3A%2F%2Fwww.opengis.net%2Ffes%2F2.0%22%3E%3Cfes%3AAnd%3E%3Cfes%3APropertyIsLike+wildCard%3D%22%2A%22+singleChar%3D%22%3F%22+escapeChar%3D%22%21%22+matchCase%3D%22false%22%3E%3Cfes%3AValueReference%3EJPT_NAZWA_%3C%2Ffes%3AValueReference%3E%3Cfes%3ALiteral%3E%2Ap%C5%82o%C5%84ski%2A%3C%2Ffes%3ALiteral%3E%3C%2Ffes%3APropertyIsLike%3E%3Cfes%3APropertyIsLike+wildCard%3D%22%2A%22+singleChar%3D%22%3F%22+escapeChar%3D%22%21%22%3E%3Cfes%3AValueReference%3EJPT_KOD_JE%3C%2Ffes%3AValueReference%3E%3Cfes%3ALiteral%3E14%2A%3C%2Ffes%3ALiteral%3E%3C%2Ffes%3APropertyIsLike%3E%3C%2Ffes%3AAnd%3E%3C%2Ffes%3AFilter%3E",
+      "status": 200,
+      "bytes": 1387,
+      "contentType": "text/xml; subtype=\"gml/3.2.1\"; charset=UTF-8",
+      "truncated": false,
+      "numberReturned": "1",
+      "sha256": "a6441baa52813a2ffeee66bbace155773910e24ad67ab361f3d68c3678b72ff6"
+    },
+    {
+      "name": "admin-regions",
+      "url": "https://mapy.geoportal.gov.pl/wss/service/PZGIK/PRG/WFS/AdministrativeBoundaries?service=WFS&version=2.0.0&request=GetFeature&typeNames=ms%3AA01_Granice_wojewodztw&propertyName=JPT_NAZWA_%2CJPT_KOD_JE&count=16",
+      "status": 200,
+      "bytes": 4369,
+      "contentType": "text/xml; subtype=\"gml/3.2.1\"; charset=UTF-8",
+      "truncated": false,
+      "numberReturned": "16",
+      "sha256": "e0a4fab6e74104ea69e0501c093ba0d0fedf1f370689ac226935ff32378b02f4"
+    }
+  ]
+}

@@ -1,8 +1,17 @@
 .error {
-  margin-block: 0 2rem;
-  padding: 1rem;
+  position: fixed;
+  z-index: 40;
+  top: 60px;
+  right: 16px;
+  max-width: 360px;
+  padding: 12px;
   color: #711c16;
   background: #fff0ee;
   border: 1px solid #d7928c;
-  border-radius: 0.5rem;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+dialog::backdrop {
+  background: rgb(15 30 22 / 45%);
 }

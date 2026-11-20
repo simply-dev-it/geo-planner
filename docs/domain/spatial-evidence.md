@@ -37,6 +37,12 @@ has a stable ID, name, locale, privacy classification, canonical AOI geometry,
 explicit CRS, selected catalog layer IDs, typed preferences, immutable
 acquisition references, and backend-owned sketch state.
 
+A parcel subject retains its full source identity independently of its human
+parcel number. A number such as `1092/2` needs administrative or cadastral-precinct
+context when it is ambiguous. Display labels never replace stable subject
+identity. An explicitly fitted project rectangle encloses all selected parcel
+subjects with context; fitting never changes their source boundaries.
+
 A project never contains executable provider URLs, credentials, filesystem
 paths, bucket keys, or UI-specific branching. Spatially distant subjects become
 separate projects rather than one unbounded acquisition.

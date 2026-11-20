@@ -4,16 +4,20 @@ import {
   INTERACTIVE_AXIS_ORDER,
   INTERACTIVE_CRS,
   MAX_PARCEL_COUNT,
+  MAX_EXTENT_METRES,
+  findSyntheticParcelIntersections,
   createSyntheticInteractiveProject,
   interactiveRequestDigest,
-  interactiveStateFor,
   previewSyntheticWorkingArea,
   resolveSyntheticParcelByIdentifier,
   resolveSyntheticParcelByPoint,
   searchSyntheticLocations,
+  searchCursorSignature,
+  type InteractiveSimulatorState,
   type WorkingExtentInput,
 } from './interactive-scenarios.js';
-import type { ProjectSimulatorState } from './project-scenarios.js';
+import { fixtureCatalog, FIXTURE_REGIONS } from './parcel-fixtures.js';
+import { createFixtureTile } from './snapshot-map.js';
 
 interface InteractiveApiResponse {
   readonly body: Readonly<Record<string, unknown>>;
@@ -36,17 +40,13 @@ interface CreateInput extends PreviewInput {
   readonly previewFingerprint: string;
 }
 
-const API_PATH = '/api/v2';
+const API_PATH = '/api/v1';
 const PROJECTS_PATH = `${API_PATH}/projects`;
 const PREVIEWS_PATH = `${PROJECTS_PATH}/previews`;
-const FINGERPRINT_PATTERN = /^v2:sha256:[a-f0-9]{64}$/;
+const FINGERPRINT_PATTERN = /^v1:sha256:[a-f0-9]{64}$/;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const TILE_PATH_PATTERN = /^\/api\/v2\/map\/layers\/([^/]+)\/tiles\/(-?\d+)\/(-?\d+)\/(-?\d+)$/;
-const PROJECT_PATH_PATTERN = /^\/api\/v2\/projects\/([^/]+)$/;
-const FIXTURE_TILE = Buffer.from(
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/cS8AAAAASUVORK5CYII=',
-  'base64',
-);
+const TILE_PATH_PATTERN = /^\/api\/v1\/map\/layers\/([^/]+)\/tiles\/(-?\d+)\/(-?\d+)\/(-?\d+)$/;
+const PROJECT_PATH_PATTERN = /^\/api\/v1\/projects\/([^/]+)$/;
 
 function response(
   body: Readonly<Record<string, unknown>>,
@@ -338,8 +338,8 @@ function parseCreateInput(
       400,
       'INVALID_REQUEST',
       'Invalid preview fingerprint',
-      'previewFingerprint must be a version 2 SHA-256 fingerprint.',
-      [{ field: 'previewFingerprint', message: 'Expected the v2:sha256 format.' }],
+      'previewFingerprint must be a version 1 SHA-256 fingerprint.',
+      [{ field: 'previewFingerprint', message: 'Expected the v1:sha256 format.' }],
     );
   }
   return { ...parsedPreview, name: name.trim(), previewFingerprint };
@@ -351,32 +351,102 @@ function singleHeader(headers: IncomingHttpHeaders, name: string): string | unde
 }
 
 function handleSearch(url: URL, correlationId: string): InteractiveApiResponse {
-  const query = url.searchParams.get('query');
-  if (
-    !query ||
-    query.trim().length === 0 ||
-    query.length > 120 ||
-    [...url.searchParams.keys()].some((key) => key !== 'query')
-  ) {
-    return problem(
+  const query = (url.searchParams.get('query') ?? '').trim();
+  const regionId = url.searchParams.get('regionId') || undefined;
+  const type = url.searchParams.get('type') || undefined,
+    limit = Number(url.searchParams.get('limit') ?? 5),
+    cursor = url.searchParams.get('cursor');
+  const invalid = () =>
+    problem(
       correlationId,
       400,
       'INVALID_SEARCH',
-      'Invalid search query',
-      'Provide one query parameter containing between 1 and 120 characters.',
-      [{ field: 'query', message: 'A single bounded query is required.' }],
+      'Invalid search',
+      'Use bounded query, known filters, a page size of 1-5 and a cursor from the same query.',
     );
-  }
-  if (query === '__fixture_unavailable__') {
+  if (
+    query.length < 1 ||
+    query.length > 120 ||
+    !Number.isInteger(limit) ||
+    limit < 1 ||
+    limit > 5 ||
+    [...url.searchParams.keys()].some(
+      (k) =>
+        ![
+          'query',
+          'regionId',
+          'type',
+          'limit',
+          'cursor',
+          'countyId',
+          'communeId',
+          'localityId',
+          'streetId',
+          'countyName',
+          'communeName',
+          'localityName',
+          'streetName',
+          'bounds',
+        ].includes(k),
+    ) ||
+    [...url.searchParams.keys()].some((k) => url.searchParams.getAll(k).length !== 1) ||
+    (regionId && !FIXTURE_REGIONS.some((r) => r.id === regionId)) ||
+    (type && !['place', 'parcel', 'locality', 'street', 'address'].includes(type))
+  )
+    return invalid();
+  if (query === '__fixture_unavailable__')
     return problem(
       correlationId,
       503,
       'SEARCH_UNAVAILABLE',
       'Search unavailable',
-      'The fixture scenario represents an unavailable upstream search provider.',
+      'Fixture failure.',
     );
+  const context = Object.fromEntries(
+    [
+      'countyId',
+      'communeId',
+      'localityId',
+      'streetId',
+      'countyName',
+      'communeName',
+      'localityName',
+      'streetName',
+      'bounds',
+    ].map((k) => [k, url.searchParams.get(k)?.trim() || undefined]),
+  );
+  if (
+    Object.entries(context).some(
+      ([k, v]) => v && v.length > (k === 'bounds' ? 128 : k.endsWith('Name') ? 120 : 64),
+    )
+  )
+    return invalid();
+  if (context['bounds']) {
+    const parts = context['bounds'].split(',');
+    if (parts.some((part) => !part.trim())) return invalid();
+    const b = parts.map(Number) as [number, number, number, number];
+    if (
+      b.length !== 4 ||
+      !b.every(Number.isFinite) ||
+      b[2] <= b[0] ||
+      b[3] <= b[1] ||
+      b[2] - b[0] > 2000 ||
+      b[3] - b[1] > 2000
+    )
+      return invalid();
   }
-  return response(searchSyntheticLocations(query), correlationId, 200);
+  const options = { regionId, type, limit, ...context };
+  let offset = 0;
+  if (cursor) {
+    const match = /^([a-f0-9]{16}):(\d{1,4})$/.exec(cursor);
+    if (!match || match[1] !== searchCursorSignature(query, options)) return invalid();
+    offset = Number(match[2]);
+    if (offset < 1 || offset > 1000 || offset % limit !== 0) return invalid();
+  }
+  const result = searchSyntheticLocations(query, { ...options, offset });
+  if (offset > 0 && Array.isArray(result['candidates']) && result['candidates'].length === 0)
+    return invalid();
+  return response(result, correlationId, 200);
 }
 
 function handleTile(pathname: string, correlationId: string): InteractiveApiResponse | undefined {
@@ -385,13 +455,13 @@ function handleTile(pathname: string, correlationId: string): InteractiveApiResp
     return undefined;
   }
   const [, layerId, zoomText, columnText, rowText] = match;
-  if (layerId !== 'fixture-base') {
+  if (layerId !== 'base-map') {
     return problem(
       correlationId,
       404,
       'MAP_LAYER_NOT_FOUND',
       'Map layer not found',
-      'Only the synthetic fixture layer is available.',
+      'Only the configured offline fixture layer is available.',
     );
   }
   const zoom = Number(zoomText);
@@ -414,13 +484,18 @@ function handleTile(pathname: string, correlationId: string): InteractiveApiResp
       'z must be from 0 to 18 and x and y must lie within the XYZ tile matrix.',
     );
   }
+  const tile = createFixtureTile(zoom, column, row);
   return response({}, correlationId, 200, {
     contentType: 'image/png',
-    rawBody: FIXTURE_TILE,
+    rawBody: tile.body,
     headers: {
       'cache-control': 'public, max-age=60',
-      'x-map-attribution': 'Synthetic fixture only; no external map source.',
-      'x-simulator-fixture': 'transparent-1px-png',
+      'x-map-attribution': tile.marker.startsWith('archived-')
+        ? 'Archived GUGiK ORTO snapshot; source date unknown; indicative only.'
+        : tile.marker === 'captured-public-vectors-256px-png'
+          ? 'Captured GUGiK PRG street vectors; frozen partial snapshot; indicative only.'
+          : 'Synthetic fixture only; no external map source.',
+      'x-simulator-fixture': tile.marker,
     },
   });
 }
@@ -507,6 +582,31 @@ function handleParcelResolve(
   );
 }
 
+function handleIntersections(
+  bodyText: string | undefined,
+  correlationId: string,
+): InteractiveApiResponse {
+  const parsed = parseObject(bodyText, correlationId);
+  if ('error' in parsed) return parsed.error;
+  const unexpected = rejectUnexpectedKeys(parsed.body, ['workingExtent'], correlationId);
+  if (unexpected) return unexpected;
+  const extent = parseWorkingExtent(parsed.body['workingExtent'], correlationId);
+  if (!('bounds' in extent)) return extent;
+  if (
+    extent.bounds[2] - extent.bounds[0] > MAX_EXTENT_METRES ||
+    extent.bounds[3] - extent.bounds[1] > MAX_EXTENT_METRES
+  ) {
+    return problem(
+      correlationId,
+      400,
+      'INVALID_EXTENT',
+      'Invalid discovery extent',
+      'Parcel discovery requires a rectangle no larger than 2 km by 2 km.',
+    );
+  }
+  return response(findSyntheticParcelIntersections(extent), correlationId, 200);
+}
+
 function handlePreview(
   bodyText: string | undefined,
   correlationId: string,
@@ -543,7 +643,7 @@ function handleCreate(
   bodyText: string | undefined,
   headers: IncomingHttpHeaders,
   correlationId: string,
-  baseState: ProjectSimulatorState,
+  state: InteractiveSimulatorState,
 ): InteractiveApiResponse {
   const parsed = parseObject(bodyText, correlationId);
   if ('error' in parsed) {
@@ -566,7 +666,6 @@ function handleCreate(
     );
   }
 
-  const state = interactiveStateFor(baseState);
   const requestDigest = interactiveRequestDigest({
     name: input.name,
     parcelIds: [...input.parcelIds].sort(),
@@ -622,7 +721,7 @@ function handleCreate(
 function handleReadProject(
   pathname: string,
   correlationId: string,
-  baseState: ProjectSimulatorState,
+  state: InteractiveSimulatorState,
 ): InteractiveApiResponse | undefined {
   const match = PROJECT_PATH_PATTERN.exec(pathname);
   if (!match || pathname === PREVIEWS_PATH) {
@@ -638,7 +737,7 @@ function handleReadProject(
       'projectId must be a UUID.',
     );
   }
-  const project = interactiveStateFor(baseState).projects.get(projectId);
+  const project = state.projects.get(projectId);
   if (!project) {
     return problem(
       correlationId,
@@ -657,17 +756,30 @@ export function routeInteractiveApi(
   bodyText: string | undefined,
   headers: IncomingHttpHeaders,
   correlationId: string,
-  state: ProjectSimulatorState,
+  state: InteractiveSimulatorState,
 ): InteractiveApiResponse | undefined {
   const tile = method === 'GET' ? handleTile(url.pathname, correlationId) : undefined;
   if (tile) {
     return tile;
   }
+  if (method === 'GET' && url.pathname === `${API_PATH}/search/filters`)
+    return response(
+      {
+        regions: FIXTURE_REGIONS,
+      },
+      correlationId,
+      200,
+    );
+  if (method === 'GET' && url.pathname === '/_simulator/catalog')
+    return response(fixtureCatalog(), correlationId, 200);
   if (method === 'GET' && url.pathname === `${API_PATH}/search`) {
     return handleSearch(url, correlationId);
   }
   if (method === 'POST' && url.pathname === `${API_PATH}/parcels/resolve`) {
     return handleParcelResolve(bodyText, correlationId);
+  }
+  if (method === 'POST' && url.pathname === `${API_PATH}/parcels/intersections`) {
+    return handleIntersections(bodyText, correlationId);
   }
   if (method === 'POST' && url.pathname === PREVIEWS_PATH) {
     return handlePreview(bodyText, correlationId);

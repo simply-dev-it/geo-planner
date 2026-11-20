@@ -10,11 +10,13 @@ schemas; do not invent or duplicate methods, paths, or payloads here.
 | Frontend capability | Frontend entry point | Accepted contract | Backend state |
 | --- | --- | --- | --- |
 
-No accepted product API slice currently awaits backend implementation. The
-Angular foundation has no product API calls; it loads `/runtime-config.json`
-for deployment configuration, and the `geo-planner-api` library is empty.
-`GET /test/hello/{name}` and `POST /test/hello` are backend test routes, while
-`GET /_simulator/health` is simulator health; none is a missing product API.
+The frontend currently exercises a provisional interactive project/search/map
+slice against the simulator. The [provisional OpenAPI](../architecture/contracts/interactive-v1.openapi.yaml)
+and [provider integration handoff](../architecture/public-api-integration.md)
+are available for owner-backend implementation and review. They are not recorded
+as an accepted production slice until contract acceptance. Source integration,
+provider limits, imagery normalization and durable persistence remain backend
+work; passing simulator checks does not establish those capabilities.
 
 Update this queue when an accepted frontend slice enters delivery and when its
 backend implementation is completed or the slice no longer needs it. Each

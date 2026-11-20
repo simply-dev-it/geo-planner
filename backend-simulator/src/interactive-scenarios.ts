@@ -1,11 +1,20 @@
+import { PUBLIC_SNAPSHOT, publicNeighbourhood } from './public-snapshot.js';
+import {
+  CIEZKOWICE_BOUNDS,
+  CIEZKOWICE_SNAPSHOT,
+  isSnapshotNeighbourhood,
+} from './snapshot-data.js';
+import { fixtureContainsPoint, fixtureIntersectsArea } from './fixture-geometry.js';
 import { createHash } from 'node:crypto';
 
 import {
-  createRequestDigest,
-  previewSyntheticParcels,
-  type ProjectSimulatorState,
+  resolveSyntheticParcelFixture,
   SYNTHETIC_PARCEL_IDS,
-} from './project-scenarios.js';
+  syntheticParcelLabels,
+  PARCEL_FIXTURES,
+  FIXTURE_REGIONS,
+  FIXTURE_LOCALITIES,
+} from './parcel-fixtures.js';
 
 export const INTERACTIVE_CRS = 'EPSG:2180';
 export const INTERACTIVE_AXIS_ORDER = 'easting-northing';
@@ -35,7 +44,7 @@ interface InteractiveIdempotencyRecord {
   readonly project: InteractiveProject;
 }
 
-interface InteractiveSimulatorState {
+export interface InteractiveSimulatorState {
   nextProjectNumber: number;
   readonly projects: Map<string, InteractiveProject>;
   readonly idempotencyRecords: Map<string, InteractiveIdempotencyRecord>;
@@ -48,93 +57,81 @@ interface Bounds {
   readonly maxNorthing: number;
 }
 
-const interactiveStates = new WeakMap<ProjectSimulatorState, InteractiveSimulatorState>();
-const PARCEL_LOOKUP_FIXTURES = [
-  SYNTHETIC_PARCEL_IDS.single,
-  SYNTHETIC_PARCEL_IDS.adjacent,
-  SYNTHETIC_PARCEL_IDS.nearby,
-  SYNTHETIC_PARCEL_IDS.distant,
-  SYNTHETIC_PARCEL_IDS.ambiguous,
-  SYNTHETIC_PARCEL_IDS.unresolved,
-] as const;
-
+const PARCEL_LOOKUP_FIXTURES = PARCEL_FIXTURES.map((p) => p.id);
 const LOCATION_FIXTURES: readonly Readonly<Record<string, unknown>>[] = [
-  {
-    id: 'fixture-voivodeship',
-    type: 'voivodeship',
-    label: 'Województwo Testowe',
-    center: [102000, 202000],
-    extent: [100000, 200000, 104000, 204000],
-    crs: INTERACTIVE_CRS,
-    axisOrder: INTERACTIVE_AXIS_ORDER,
-    source: 'SYNTHETIC_FIXTURE',
-  },
-  {
-    id: 'fixture-locality',
+  ...FIXTURE_LOCALITIES.map((l) => ({
+    id: l.id,
     type: 'locality',
-    label: 'Nowe Przykłady',
-    center: [100500, 200500],
-    extent: [100000, 200000, 101000, 201000],
+    label: l.label,
+    contextLabel:
+      'contextLabel' in l
+        ? l.contextLabel
+        : FIXTURE_REGIONS.find((r) => r.id === l.regionId)!.label,
+    regionId: l.regionId,
+    localityId: l.id,
+    center: l.center,
+    extent:
+      'extent' in l
+        ? l.extent
+        : [l.center[0] - 500, l.center[1] - 500, l.center[0] + 500, l.center[1] + 500],
     crs: INTERACTIVE_CRS,
     axisOrder: INTERACTIVE_AXIS_ORDER,
-    source: 'SYNTHETIC_FIXTURE',
-  },
-  {
-    id: 'fixture-street-a',
+    source: 'source' in l ? l.source : 'SYNTHETIC_FIXTURE',
+  })),
+  ...FIXTURE_LOCALITIES.filter((l) => !('source' in l)).flatMap((l) =>
+    ['Lipowa', 'Leśna'].map((name, i) => ({
+      id: `street-${l.id}-${i}`,
+      streetId: `street-${l.id}-${i}`,
+      type: 'street',
+      label: name,
+      contextLabel: l.label,
+      regionId: l.regionId,
+      localityId: l.id,
+      center: l.center,
+      extent: [l.center[0] - 150, l.center[1] - 150, l.center[0] + 150, l.center[1] + 150],
+      crs: INTERACTIVE_CRS,
+      axisOrder: INTERACTIVE_AXIS_ORDER,
+      source: 'SYNTHETIC_FIXTURE',
+    })),
+  ),
+  ...PUBLIC_SNAPSHOT.streets.map((s) => ({
+    ...s,
     type: 'street',
-    label: 'Ulica Przykładowa',
-    center: [100200, 200200],
-    extent: [100100, 200100, 100300, 200300],
     crs: INTERACTIVE_CRS,
     axisOrder: INTERACTIVE_AXIS_ORDER,
-    source: 'SYNTHETIC_FIXTURE',
-  },
-  {
-    id: 'fixture-street-b',
-    type: 'street',
-    label: 'Ulica Przykładowa',
-    center: [101200, 201200],
-    extent: [101100, 201100, 101300, 201300],
-    crs: INTERACTIVE_CRS,
-    axisOrder: INTERACTIVE_AXIS_ORDER,
-    source: 'SYNTHETIC_FIXTURE',
-  },
+  })),
 ];
 
-export function interactiveStateFor(
-  projectState: ProjectSimulatorState,
-): InteractiveSimulatorState {
-  const existing = interactiveStates.get(projectState);
-  if (existing) {
-    return existing;
-  }
-
-  const created: InteractiveSimulatorState = {
+export function createInteractiveSimulatorState(): InteractiveSimulatorState {
+  return {
     nextProjectNumber: 1,
     projects: new Map(),
     idempotencyRecords: new Map(),
   };
-  interactiveStates.set(projectState, created);
-  return created;
 }
 
 function fixtureParcel(parcelId: string): Readonly<Record<string, unknown>> | undefined {
-  const preview = previewSyntheticParcels([parcelId], 0);
-  const parcels = preview['parcels'] as readonly Readonly<Record<string, unknown>>[];
-  const parcel = parcels[0];
+  const parcel = resolveSyntheticParcelFixture(parcelId);
 
-  if (!parcel || parcel['status'] !== 'resolved') {
+  if (parcel['status'] !== 'resolved') {
     return undefined;
   }
 
   return {
     id: parcel['resolvedId'],
+    parcelNumber: syntheticParcelLabels(parcelId).parcelNumber,
+    contextLabel: syntheticParcelLabels(parcelId).contextLabel,
     geometry: parcel['geometry'],
     crs: INTERACTIVE_CRS,
     axisOrder: INTERACTIVE_AXIS_ORDER,
-    source: 'SYNTHETIC_FIXTURE',
-    sourceDataDate: null,
-    limitations: ['Fictional test geometry; not retrieved from ULDK.'],
+    source: parcel['source'] ?? 'SYNTHETIC_FIXTURE',
+    sourceDataDate: parcel['sourceDataDate'] ?? null,
+    limitations:
+      parcel['source'] === 'ARCHIVED_GUGIK_ULDK'
+        ? CIEZKOWICE_SNAPSHOT.limitations
+        : parcel['source'] === 'CAPTURED_GUGIK_EGIB'
+          ? PUBLIC_SNAPSHOT.limitations
+          : ['Fictional test geometry; not retrieved from ULDK.'],
   };
 }
 
@@ -225,28 +222,37 @@ function resolvedParcelRecord(
 ): Readonly<Record<string, unknown>> {
   return {
     inputId: parcel['inputId'],
+    ...(parcel['status'] === 'resolved'
+      ? { parcelNumber: parcel['parcelNumber'], contextLabel: parcel['contextLabel'] }
+      : {}),
     status: parcel['status'],
     id: parcel['resolvedId'] ?? null,
     candidateIds: parcel['candidateIds'],
     geometry: parcel['geometry'],
     crs: INTERACTIVE_CRS,
     axisOrder: INTERACTIVE_AXIS_ORDER,
-    source: 'SYNTHETIC_FIXTURE',
-    sourceDataDate: null,
+    source: parcel['source'] ?? 'SYNTHETIC_FIXTURE',
+    sourceDataDate: parcel['sourceDataDate'] ?? null,
   };
 }
 
 function candidateForParcel(parcelId: string): Readonly<Record<string, unknown>> | undefined {
   const parcel = fixtureParcel(parcelId);
   const bounds = parcel ? coordinateBounds(parcel['geometry']) : undefined;
-  if (!bounds) {
+  if (!parcel || !bounds) {
     return undefined;
   }
   return {
     id: `fixture-parcel-${parcelId}`,
     type: 'parcel',
-    label: parcelId,
+    label: syntheticParcelLabels(parcelId).parcelNumber,
+    contextLabel: syntheticParcelLabels(parcelId).contextLabel,
     parcelId,
+    regionId: syntheticParcelLabels(parcelId).regionId,
+    localityId:
+      parcel['source'] === 'SYNTHETIC_FIXTURE'
+        ? syntheticParcelLabels(parcelId).localityId
+        : undefined,
     center: [
       (bounds.minEasting + bounds.maxEasting) / 2,
       (bounds.minNorthing + bounds.maxNorthing) / 2,
@@ -254,47 +260,273 @@ function candidateForParcel(parcelId: string): Readonly<Record<string, unknown>>
     extent: boundsArray(bounds),
     crs: INTERACTIVE_CRS,
     axisOrder: INTERACTIVE_AXIS_ORDER,
-    source: 'SYNTHETIC_FIXTURE',
+    source: parcel['source'] ?? 'SYNTHETIC_FIXTURE',
   };
 }
 
-export function searchSyntheticLocations(query: string): Readonly<Record<string, unknown>> {
-  const normalizedQuery = query.trim().toLocaleLowerCase('pl-PL');
-  const parcelCandidates = [SYNTHETIC_PARCEL_IDS.single, SYNTHETIC_PARCEL_IDS.ambiguous]
-    .map(candidateForParcel)
-    .filter((candidate): candidate is Readonly<Record<string, unknown>> => candidate !== undefined);
-  const candidates = [...LOCATION_FIXTURES, ...parcelCandidates].filter((candidate) => {
-    const label = String(candidate['label']).toLocaleLowerCase('pl-PL');
-    const parcelId = String(candidate['parcelId'] ?? '').toLocaleLowerCase('pl-PL');
-    return label.includes(normalizedQuery) || parcelId === normalizedQuery;
+export interface FixtureSearchOptions {
+  countyId?: string;
+  communeId?: string;
+  localityId?: string;
+  streetId?: string;
+  countyName?: string;
+  communeName?: string;
+  localityName?: string;
+  streetName?: string;
+  bounds?: string;
+  regionId?: string;
+  type?: string;
+  limit?: number;
+  offset?: number;
+}
+export function searchSyntheticLocations(
+  query: string,
+  options: FixtureSearchOptions = {},
+): Readonly<Record<string, unknown>> {
+  if (
+    options.type === 'address' &&
+    (!(options.localityId || options.localityName) || !(options.streetId || options.streetName))
+  )
+    return {
+      status: 'needs_context',
+      candidates: [],
+      nextCursor: null,
+      contextPrompt: 'Wybierz miejscowość i ulicę.',
+      provenance: { provider: 'SYNTHETIC_FIXTURE', sourceDataDate: null, limitations: [] },
+    };
+  if (
+    !['place', 'locality', 'street', 'address'].includes(options.type ?? '') &&
+    /^\d+(?:\/\d+)?$/.test(query.trim()) &&
+    !options.bounds
+  )
+    return {
+      status: 'needs_context',
+      candidates: [],
+      nextCursor: null,
+      contextPrompt: 'Wybierz miejscowość lub adres i przybliż mapę do szukanego miejsca.',
+      provenance: {
+        provider: 'SYNTHETIC_FIXTURE',
+        sourceDataDate: null,
+        limitations: ['Fictional source-aligned lookup example.'],
+      },
+    };
+  const normalize = (value: string) =>
+    value.toLocaleLowerCase('pl-PL').normalize('NFD').replace(/\p{M}/gu, '').replace(/ł/g, 'l');
+  const terms = normalize(query)
+    .split(/[\s,]+/)
+    .filter(Boolean);
+  const parcels = PARCEL_LOOKUP_FIXTURES.map(candidateForParcel).filter(
+    (p): p is Readonly<Record<string, unknown>> => !!p,
+  );
+  const addresses: Readonly<Record<string, unknown>>[] = ['place', 'address'].includes(
+    options.type ?? '',
+  )
+    ? FIXTURE_LOCALITIES.filter((l) => !('source' in l)).map((l) => ({
+        id: `address-${l.id}-lipowa-1`,
+        streetId: `street-${l.id}-0`,
+        type: 'point_address',
+        label: `${l.label}, Lipowa 1`,
+        contextLabel:
+          'contextLabel' in l
+            ? l.contextLabel
+            : FIXTURE_REGIONS.find((r) => r.id === l.regionId)!.label,
+        regionId: l.regionId,
+        localityId: l.id,
+        center: [l.center[0] + 30, l.center[1] + 30],
+        extent: [l.center[0] - 250, l.center[1] - 250, l.center[0] + 250, l.center[1] + 250],
+        crs: INTERACTIVE_CRS,
+        axisOrder: INTERACTIVE_AXIS_ORDER,
+        source: 'SYNTHETIC_FIXTURE',
+      }))
+    : [];
+  addresses.push(
+    ...PUBLIC_SNAPSHOT.addresses.map((a) => ({
+      ...a,
+      type: 'point_address',
+      crs: INTERACTIVE_CRS,
+      axisOrder: INTERACTIVE_AXIS_ORDER,
+    })),
+  );
+  const all = [...LOCATION_FIXTURES, ...parcels, ...addresses].filter((p) => {
+    if (options.regionId && p['regionId'] !== options.regionId) return false;
+    if (
+      options.type === 'place'
+        ? !['locality', 'street', 'point_address'].includes(String(p['type']))
+        : options.type === 'address'
+          ? p['type'] !== 'point_address'
+          : options.type && p['type'] !== options.type
+    )
+      return false;
+    const locality = FIXTURE_LOCALITIES.find((l) => l.id === p['localityId']);
+    const county = p['regionId'] === 'north' ? 'Północny' : 'Południowy';
+    if (
+      options.localityName &&
+      (!locality || !normalize(locality.label).includes(normalize(options.localityName)))
+    )
+      return false;
+    if (
+      options.communeName &&
+      (!locality || !normalize(locality.label).includes(normalize(options.communeName)))
+    )
+      return false;
+    if (options.countyName && !normalize(county).includes(normalize(options.countyName)))
+      return false;
+    if (options.localityId && p['localityId'] !== options.localityId) return false;
+    if (options.communeId && p['localityId'] !== options.communeId) return false;
+    if (options.countyId && options.countyId !== p['regionId'] + '-county') return false;
+    if (options.streetId && options.streetId !== (p['streetId'] ?? p['id'])) return false;
+    if (
+      !options.streetId &&
+      options.streetName &&
+      normalize(options.streetName) !==
+        normalize(
+          p['type'] === 'point_address' ? String(p['streetName'] ?? 'Lipowa') : String(p['label']),
+        )
+    )
+      return false;
+    if (options.bounds) {
+      const b = options.bounds.split(',').map(Number) as [number, number, number, number],
+        e = p['extent'] as [number, number, number, number];
+      if (!e || e[2] <= b[0] || e[0] >= b[2] || e[3] <= b[1] || e[1] >= b[3]) return false;
+    }
+    if (options.type === 'address') return query.trim() === String(p['houseNumber'] ?? '1');
+    if (options.type === 'place') {
+      // Match the explicit phrase; a locality does not enumerate its streets/house numbers.
+      const phrase =
+        p['type'] === 'street' ? `${locality?.label ?? ''} ${p['label']}` : String(p['label']);
+      const words = (value: string) =>
+        normalize(value)
+          .split(/[\s,]+/)
+          .filter(Boolean)
+          .join(' ');
+      return words(phrase) === words(query);
+    }
+    const matchText = String(p['source']).startsWith('CAPTURED_')
+      ? (v: string) => v.toLocaleLowerCase('pl-PL').normalize('NFC')
+      : normalize;
+    const recordTerms = matchText(query)
+      .split(/[\s,]+/)
+      .filter(Boolean);
+    const label = matchText(String(p['label']));
+    const identity = String(p['parcelId'] ?? '');
+    const haystack = matchText([label, p['contextLabel'], identity].join(' '));
+    const numbers = recordTerms.filter((t) => /^\d+(?:\/\d+)?$/.test(t));
+    if (p['type'] === 'parcel' && numbers.some((t) => t !== label)) return false;
+    return (
+      !recordTerms.length ||
+      recordTerms.every((t) =>
+        options.type === 'street'
+          ? haystack.includes(t)
+          : haystack.split(/[\s,·]+/).includes(t) || identity === t,
+      )
+    );
   });
-
+  const offset = options.offset ?? 0,
+    limit = options.limit ?? 5;
+  const signature = createHash('sha256')
+    .update(
+      JSON.stringify([
+        query,
+        options.regionId ?? '',
+        options.type ?? '',
+        limit,
+        options.countyId ?? '',
+        options.communeId ?? '',
+        options.localityId ?? '',
+        options.streetId ?? '',
+        options.countyName ?? '',
+        options.communeName ?? '',
+        options.localityName ?? '',
+        options.streetName ?? '',
+        options.bounds ?? '',
+      ]),
+    )
+    .digest('hex')
+    .slice(0, 16);
+  const captured =
+    all.some((p) => String(p['source']).startsWith('CAPTURED_')) ||
+    PUBLIC_SNAPSHOT.localities.some((l) => l.id === options.localityId) ||
+    (options.bounds && publicNeighbourhood(options.bounds.split(',').map(Number)));
+  const archived =
+    all.some((p) => String(p['source']).startsWith('ARCHIVED_')) ||
+    (options.bounds && isSnapshotNeighbourhood(options.bounds.split(',').map(Number)));
   return {
-    status: candidates.length === 0 ? 'no_match' : candidates.length === 1 ? 'ready' : 'ambiguous',
-    candidates,
+    status: all.length === 0 ? 'no_match' : all.length === 1 ? 'ready' : 'ambiguous',
+    candidates: all
+      .slice(offset, offset + limit)
+      .map((p) =>
+        Object.fromEntries(
+          [
+            'id',
+            'type',
+            'label',
+            'contextLabel',
+            'parcelId',
+            'regionId',
+            'localityId',
+            'streetId',
+            'center',
+            'extent',
+            'crs',
+            'axisOrder',
+            'source',
+          ]
+            .filter((k) => p[k] !== undefined)
+            .map((k) => [k, p[k]]),
+        ),
+      ),
+    nextCursor: offset + limit < all.length ? `${signature}:${offset + limit}` : null,
     provenance: {
-      provider: 'SYNTHETIC_FIXTURE',
+      provider: captured
+        ? 'CAPTURED_GUGIK_SNAPSHOT'
+        : archived
+          ? 'ARCHIVED_GUGIK_SNAPSHOT'
+          : 'SYNTHETIC_FIXTURE',
       sourceDataDate: null,
-      limitations: ['Fictional search candidates; no live place or parcel service was called.'],
+      limitations: captured
+        ? PUBLIC_SNAPSHOT.limitations
+        : archived
+          ? CIEZKOWICE_SNAPSHOT.limitations
+          : ['Fictional cadastral catalogue; no live provider access.'],
     },
   };
+}
+export function searchCursorSignature(query: string, options: FixtureSearchOptions): string {
+  return createHash('sha256')
+    .update(
+      JSON.stringify([
+        query,
+        options.regionId ?? '',
+        options.type ?? '',
+        options.limit ?? 5,
+        options.countyId ?? '',
+        options.communeId ?? '',
+        options.localityId ?? '',
+        options.streetId ?? '',
+        options.countyName ?? '',
+        options.communeName ?? '',
+        options.localityName ?? '',
+        options.streetName ?? '',
+        options.bounds ?? '',
+      ]),
+    )
+    .digest('hex')
+    .slice(0, 16);
 }
 
 export function resolveSyntheticParcelByIdentifier(
   parcelId: string,
 ): Readonly<Record<string, unknown>> {
-  const preview = previewSyntheticParcels([parcelId], 0);
-  const parcels = preview['parcels'] as readonly Readonly<Record<string, unknown>>[];
-  const parcel = parcels[0];
+  const parcel = resolveSyntheticParcelFixture(parcelId);
 
-  if (parcel?.['status'] === 'resolved') {
+  if (parcel['status'] === 'resolved') {
     return {
       status: 'resolved',
       parcel: fixtureParcel(parcelId) ?? null,
       candidates: [],
     };
   }
-  if (parcel?.['status'] === 'ambiguous') {
+  if (parcel['status'] === 'ambiguous') {
     return {
       status: 'ambiguous',
       parcel: null,
@@ -302,6 +534,8 @@ export function resolveSyntheticParcelByIdentifier(
         id: candidateId,
         inputId: parcelId,
         source: 'SYNTHETIC_FIXTURE',
+        parcelNumber: syntheticParcelLabels(candidateId).parcelNumber,
+        contextLabel: syntheticParcelLabels(candidateId).contextLabel,
       })),
     };
   }
@@ -313,17 +547,7 @@ export function resolveSyntheticParcelByPoint(
 ): Readonly<Record<string, unknown>> {
   const matches = PARCEL_LOOKUP_FIXTURES.flatMap((parcelId) => {
     const parcel = fixtureParcel(parcelId);
-    const bounds = parcel ? coordinateBounds(parcel['geometry']) : undefined;
-    if (
-      !parcel ||
-      !bounds ||
-      coordinates[0] < bounds.minEasting ||
-      coordinates[0] > bounds.maxEasting ||
-      coordinates[1] < bounds.minNorthing ||
-      coordinates[1] > bounds.maxNorthing
-    ) {
-      return [];
-    }
+    if (!parcel || !fixtureContainsPoint(parcel['geometry'], coordinates)) return [];
     return [parcel];
   });
 
@@ -340,9 +564,7 @@ export function previewSyntheticWorkingArea(
   parcelIds: readonly string[],
   workingExtent: WorkingExtentInput,
 ): Readonly<Record<string, unknown>> {
-  const parcelPreview = previewSyntheticParcels(parcelIds, 0);
-  const inputParcels = parcelPreview['parcels'] as readonly Readonly<Record<string, unknown>>[];
-  const selectedParcels = inputParcels.map(resolvedParcelRecord);
+  const selectedParcels = parcelIds.map(resolveSyntheticParcelFixture).map(resolvedParcelRecord);
   const workingBounds: Bounds = {
     minEasting: workingExtent.bounds[0],
     minNorthing: workingExtent.bounds[1],
@@ -368,7 +590,12 @@ export function previewSyntheticWorkingArea(
     if (!bounds) {
       continue;
     }
-    const warning = !overlaps(bounds, workingBounds)
+    const warning = !fixtureIntersectsArea(parcel['geometry'], [
+      workingBounds.minEasting,
+      workingBounds.minNorthing,
+      workingBounds.maxEasting,
+      workingBounds.maxNorthing,
+    ])
       ? 'PARCEL_OUTSIDE_WORKING_EXTENT'
       : partlyOutside(bounds, workingBounds)
         ? 'PARCEL_PARTLY_OUTSIDE_WORKING_EXTENT'
@@ -401,7 +628,7 @@ export function previewSyntheticWorkingArea(
     String(first['inputId']).localeCompare(String(second['inputId'])),
   );
   const canonicalSnapshot = JSON.stringify({
-    version: 2,
+    version: 1,
     parcelIds: [...parcelIds].sort(),
     selectedParcels: normalizedSelectedParcels,
     projectCrs: INTERACTIVE_CRS,
@@ -414,7 +641,7 @@ export function previewSyntheticWorkingArea(
   });
   const previewFingerprint =
     status === 'ready'
-      ? `v2:sha256:${createHash('sha256').update(canonicalSnapshot).digest('hex')}`
+      ? `v1:sha256:${createHash('sha256').update(canonicalSnapshot).digest('hex')}`
       : null;
 
   return {
@@ -432,10 +659,26 @@ export function previewSyntheticWorkingArea(
     },
     warnings,
     provenance: {
-      provider: 'SYNTHETIC_FIXTURE',
+      provider: selectedParcels.some((p) => p['source'] === 'ARCHIVED_GUGIK_ULDK')
+        ? 'ARCHIVED_GUGIK_SNAPSHOT'
+        : selectedParcels.some((p) => String(p['source']).startsWith('CAPTURED_'))
+          ? 'CAPTURED_GUGIK_SNAPSHOT'
+          : 'SYNTHETIC_FIXTURE',
       sourceDataDate: null,
       limitations: [
-        'Fictional geometries and no live ULDK, place-search, or map provider requests.',
+        ...(selectedParcels.some((p) => String(p['source']).startsWith('CAPTURED_'))
+          ? PUBLIC_SNAPSHOT.limitations
+          : []),
+        ...(selectedParcels.some((p) => p['source'] === 'ARCHIVED_GUGIK_ULDK')
+          ? CIEZKOWICE_SNAPSHOT.limitations
+          : []),
+        selectedParcels.some(
+          (p) =>
+            String(p['source']).startsWith('CAPTURED_') ||
+            String(p['source']).startsWith('ARCHIVED_'),
+        )
+          ? 'Offline public snapshots; no live provider access or current-coverage guarantee.'
+          : 'Fictional geometries; no live provider access.',
         'The simulator is in-memory and does not establish production revalidation or persistence.',
       ],
     },
@@ -462,5 +705,53 @@ export function createSyntheticInteractiveProject(
 }
 
 export function interactiveRequestDigest(value: Readonly<Record<string, unknown>>): string {
-  return createRequestDigest(value);
+  return createHash('sha256').update(JSON.stringify(value)).digest('hex');
+}
+
+export function findSyntheticParcelIntersections(
+  workingExtent: WorkingExtentInput,
+): Readonly<Record<string, unknown>> {
+  const [minEasting, minNorthing, maxEasting, maxNorthing] = workingExtent.bounds;
+  const bounds = { minEasting, minNorthing, maxEasting, maxNorthing };
+  // Clip actual polygon rings, including archived holes, to the requested rectangle.
+  const matches = PARCEL_LOOKUP_FIXTURES.flatMap((id) => {
+    const parcel = fixtureParcel(id);
+    const parcelBounds = parcel ? coordinateBounds(parcel['geometry']) : undefined;
+    return parcel &&
+      parcelBounds &&
+      fixtureIntersectsArea(parcel['geometry'], [
+        bounds.minEasting,
+        bounds.minNorthing,
+        bounds.maxEasting,
+        bounds.maxNorthing,
+      ])
+      ? [parcel]
+      : [];
+  }).sort((first, second) => String(first['id']).localeCompare(String(second['id'])));
+  const archived = isSnapshotNeighbourhood(workingExtent.bounds);
+  const captured = publicNeighbourhood(workingExtent.bounds);
+  const detailed = publicNeighbourhood(workingExtent.bounds, true);
+  return {
+    status:
+      captured && !detailed && !archived
+        ? 'unavailable'
+        : archived || captured || matches.length > MAX_PARCEL_COUNT
+          ? 'truncated'
+          : 'complete',
+    workingExtent,
+    candidates: matches.slice(0, MAX_PARCEL_COUNT),
+    provenance: {
+      provider: archived
+        ? 'ARCHIVED_GUGIK_SNAPSHOT'
+        : captured
+          ? 'CAPTURED_GUGIK_SNAPSHOT'
+          : 'SYNTHETIC_FIXTURE',
+      sourceDataDate: null,
+      limitations: archived
+        ? CIEZKOWICE_SNAPSHOT.limitations
+        : captured
+          ? PUBLIC_SNAPSHOT.limitations
+          : ['Complete only for the fictional fixture set; no live provider access.'],
+    },
+  };
 }

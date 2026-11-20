@@ -52,8 +52,13 @@ Each server-owned catalog entry declares:
 - upstream layers, styles, formats, CRS and axis rules;
 - required or optional status, request limits, and delivery modes;
 - attribution, licence note, purpose, and uncertainty warning;
+- provider-specific permission for viewing, caching, snapshot acquisition and
+  retention, including any exclusion of automated harvesting;
 - isolated adapter-specific parsing and validation behavior.
 
+A public viewing endpoint does not by itself authorize an image archive.
+Source descriptors distinguish permitted user-triggered acquisition from bulk
+collection; unresolved permission blocks the dependent acquisition capability.
 Provider DTOs and URLs do not cross into domain or frontend contracts. WMS
 version and axis order belong to the exact descriptor, not a global flag.
 Capabilities and mutable provider behavior are revalidated for each

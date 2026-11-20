@@ -2,8 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 
 import { routeInteractiveApi } from './interactive-api.js';
-import { routeProjectApi } from './project-api.js';
-import { createProjectSimulatorState } from './project-scenarios.js';
+import { createInteractiveSimulatorState } from './interactive-scenarios.js';
 
 export const DEFAULT_HOST = '127.0.0.1';
 export const DEFAULT_PORT = 4300;
@@ -33,7 +32,7 @@ export function routeRequest(
   requestCorrelationId: string,
   bodyText?: string,
   headers: IncomingMessage['headers'] = {},
-  state = createProjectSimulatorState(),
+  state = createInteractiveSimulatorState(),
   bodyTooLarge = false,
 ): SimulatorResponse {
   let url: URL;
@@ -57,7 +56,7 @@ export function routeRequest(
       body: {
         service: 'geo-planner-contract-simulator',
         status: 'ready',
-        mode: 'synthetic-fixtures',
+        mode: 'offline-fixtures',
         providerAccess: 'disabled',
         projectStorage: 'in-memory-only',
       },
@@ -77,18 +76,6 @@ export function routeRequest(
   );
   if (interactiveResponse) {
     return interactiveResponse;
-  }
-
-  const projectResponse = routeProjectApi(
-    method,
-    url.pathname,
-    bodyText,
-    headers,
-    requestCorrelationId,
-    state,
-  );
-  if (projectResponse) {
-    return projectResponse;
   }
 
   return {
@@ -143,7 +130,7 @@ function sendResponse(response: ServerResponse, simulatorResponse: SimulatorResp
 }
 
 export function createContractSimulator(): Server {
-  const state = createProjectSimulatorState();
+  const state = createInteractiveSimulatorState();
 
   return createServer((request, response) => {
     const chunks: Buffer[] = [];

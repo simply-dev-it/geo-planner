@@ -27,10 +27,16 @@ arg "[target]" {
   choices "frontend" "backend" "simulator" "storybook"
 }
 flag "--all" help="Run for all supported targets"
+flag "--simulator" help="Connect the frontend to the separately started simulator"
 '''
 run = '''
 set -eu
 target="${usage_target:-}"
+simulator="${usage_simulator:-false}"
+if [ "$simulator" = true ] && { [ "$target" != frontend ] || [ "${usage_all:-false}" = true ]; }; then
+  echo "--simulator requires the frontend target without --all." >&2
+  exit 2
+fi
 if [ "${usage_all:-false}" = true ]; then
   if [ -n "$target" ]; then
     echo "Choose a target or --all, not both." >&2
@@ -40,9 +46,14 @@ if [ "${usage_all:-false}" = true ]; then
 elif [ -z "$target" ]; then
   exec mise run start --help
 fi
-unset usage_target usage_all
+unset usage_target usage_all usage_simulator
 case "$target" in
-  frontend) exec npm --prefix frontend start ;;
+  frontend)
+    if [ "$simulator" = true ]; then
+      exec npm --prefix frontend run start:simulator
+    fi
+    exec npm --prefix frontend start
+    ;;
   backend) exec ./gradlew :backend:bootRun --console=plain ;;
   simulator)
     npm --prefix backend-simulator run build

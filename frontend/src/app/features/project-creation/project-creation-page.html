@@ -1,0 +1,277 @@
+<div class="workspace" [class.search-workspace]="state.step() === 0">
+  <aside class="workflow-panel" aria-label="Utworzenie projektu">
+    <header class="shrink-0 border-b border-stone-200 px-5 py-4">
+      <h1 class="mb-3 text-xl font-semibold tracking-tight">Nowy projekt</h1>
+      <gp-workflow-steps
+        [step]="state.step()"
+        [disabled]="state.locked()"
+        (changed)="state.go($event)"
+      />
+    </header>
+    @if (state.areaError() ?? state.error(); as error) {
+      <div class="mx-4 mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900" role="alert">
+        {{ error }}
+      </div>
+    }
+    <div class="panel-body" [class.search-stage]="state.step() === 0">
+      @if (state.step() === 0) {
+        <fieldset class="flex min-h-0 flex-1 flex-col border-0 p-0" [disabled]="state.locked()">
+          <gp-search-panel
+            [initial]="state.query()"
+            [rows]="state.resultRows()"
+            [stage]="state.lookupStage()"
+            [localityLabel]="state.chosenLocality()?.label ?? null"
+            [streetLabel]="state.lookupStreet()?.label ?? null"
+            [loading]="state.loading()"
+            [error]="state.searchError()"
+            [hasMore]="state.hasMore()"
+            [submitted]="state.submitted()"
+            [sourceNotice]="state.lookupNotice()"
+            [contextPrompt]="state.contextPrompt()"
+            (requested)="state.search($event)"
+            (stageChanged)="state.openLookup($event)"
+            (mapSelectionRequested)="state.startMapSelection()"
+            (changed)="state.editSearch($event)"
+            (chosen)="state.choose($event)"
+            (more)="state.more()"
+            (retry)="state.retrySearch()"
+          />
+        </fieldset>
+      }
+      @if (state.step() === 1) {
+        <section class="stage-content space-y-4">
+          <div>
+            <h2 class="text-base font-semibold">Obszar i działki</h2>
+            <p class="mt-1 text-xs text-stone-500">Zaznacz na mapie lub dopasuj do działek.</p>
+          </div>
+          @if (state.locatedParcel(); as parcel) {
+            @if (state.canAddLocated()) {
+              <div class="rounded-lg border border-emerald-200 p-3 text-sm">
+                <strong>Znaleziono działkę {{ parcel.parcelNumber ?? parcel.id }}</strong>
+                <p class="mt-1 text-xs text-stone-500">{{ parcel.contextLabel }}</p>
+                <button type="button" class="gp-button mt-2 w-full" (click)="state.addLocated()">
+                  Dodaj znalezioną działkę do projektu
+                </button>
+              </div>
+            }
+          }
+          <div class="rounded-lg bg-emerald-50 px-3 py-3">
+            <strong class="text-lg font-semibold text-emerald-900">{{
+              state.dimensions() ?? 'Brak zaznaczenia'
+            }}</strong>
+          </div>
+          <fieldset class="space-y-2 border-0 p-0" [disabled]="state.locked()">
+            <label class="gp-label" for="project-buffer"
+              >Bufor dopasowania
+              <span class="float-right font-normal">{{ state.buffer() }} m</span></label
+            ><input
+              class="w-full accent-emerald-800"
+              id="project-buffer"
+              type="range"
+              step="10"
+              [formField]="state.details.buffer"
+              (input)="state.setBuffer(+$any($event.target).value)"
+            /><button
+              class="gp-button w-full"
+              (click)="state.fit()"
+              [disabled]="!state.selectedCount()"
+            >
+              Dopasuj do działek
+            </button>
+          </fieldset>
+          <section
+            class="discovery-section border-t border-stone-200 pt-4"
+            aria-label="Działki w obszarze"
+          >
+            <h3 class="mb-2 text-xs font-semibold text-stone-500">Działki w obszarze</h3>
+            @if (state.discoveryLoading()) {
+              <p class="text-sm text-stone-500" role="status">Wykrywanie działek…</p>
+            } @else if (state.discoveryError()) {
+              <p class="text-xs text-amber-800" role="status">
+                {{ state.discoveryError() }}
+                <button class="underline" (click)="state.discover()">Ponów</button>
+              </p>
+            } @else if (state.discovery(); as result) {
+              @if (result.status === 'unavailable') {
+                <p class="text-xs text-amber-800">Brak danych dla tego obszaru.</p>
+              } @else {
+                @if (result.status === 'truncated') {
+                  <p class="mb-2 text-xs text-amber-800" role="status">
+                    Niepełna lista działek z dostępnego źródła.
+                  </p>
+                }
+                <gp-parcel-list
+                  [rows]="state.suggestionRows()"
+                  label="Proponowane działki"
+                  action="Dodaj"
+                  [disabled]="state.locked() || state.selectedCount() >= 100"
+                  (acted)="state.addSuggestion($event)"
+                />
+                @if (!state.suggested().length) {
+                  <p class="text-xs text-stone-500">Brak nowych propozycji.</p>
+                }
+              }
+            }
+          </section>
+        </section>
+      }
+      @if (state.step() === 2) {
+        <section class="stage-content space-y-4">
+          <h2 class="text-base font-semibold">Podgląd projektu</h2>
+          <div>
+            <label for="project-name" class="gp-label">Nazwa projektu</label
+            ><input
+              id="project-name"
+              class="gp-input"
+              placeholder="Nadaj nazwę projektowi"
+              [formField]="state.details.name"
+            />
+            @if (state.details.name().touched() && state.details.name().invalid()) {
+              <p class="mt-1 text-xs text-red-700">Podaj nazwę (1–160 znaków).</p>
+            }
+          </div>
+          <div
+            class="rounded-lg border border-emerald-200 bg-emerald-50 p-3"
+            aria-label="Podsumowanie podglądu"
+          >
+            <strong class="block text-lg text-emerald-900">{{ state.dimensions() }}</strong
+            ><span class="text-xs text-emerald-800"
+              >{{ state.selectionSummary() }} · obszar gotowy</span
+            >
+          </div>
+          @if (previewWarnings()) {
+            <p class="rounded-md bg-amber-50 p-3 text-xs text-amber-900">
+              Część wybranych działek wykracza poza obszar. Wróć do edycji, aby go dopasować.
+            </p>
+          }
+          @if (state.uncertain()) {
+            <div class="rounded-lg bg-amber-50 p-3 text-sm" role="alert">
+              <strong>Wynik zapisu jest niepewny.</strong>
+              <p class="mt-1 text-xs">
+                Ponów tę samą próbę. Po restarcie serwera najpierw sprawdź jej wynik.
+              </p>
+              <button class="gp-button mt-3" [disabled]="state.busy()" (click)="state.retrySave()">
+                Ponów tę samą próbę
+              </button>
+            </div>
+          }
+          <p class="text-xs text-stone-500">
+            Mapa poglądowa. Nie potwierdza granic ani stanu prawnego.
+          </p>
+        </section>
+      }
+      @if (state.selectedCount() && !state.uncertain()) {
+        <section class="selected-section">
+          <h2 class="mb-2 text-xs font-semibold text-stone-500">
+            Wybrane działki <span class="float-right">{{ state.selectedCount() }} / 100</span>
+          </h2>
+          <div class="selected-list">
+            <gp-parcel-list
+              [rows]="state.selectedRows()"
+              [disabled]="state.locked()"
+              [readOnly]="state.step() !== 1"
+              (acted)="state.remove($event)"
+            />
+          </div>
+        </section>
+      }
+    </div>
+    <footer class="panel-footer">
+      @if (state.step() === 0) {
+        <div class="w-full">
+          @if (!state.hasSpatialIntent() && !state.areaInvalid()) {
+            <p class="mb-2 text-xs text-stone-500">
+              Wyszukaj miejsce lub wybierz zaznaczanie na mapie.
+            </p>
+          }
+          <button class="gp-primary w-full" [disabled]="!state.canContinue()" (click)="state.go(1)">
+            Dalej: obszar →
+          </button>
+        </div>
+      } @else if (state.step() === 1) {
+        <button class="gp-button" [disabled]="state.locked()" (click)="state.go(0)">Wstecz</button
+        ><button
+          class="gp-primary flex-1"
+          [disabled]="!state.canPreview()"
+          (click)="state.previewArea()"
+        >
+          {{
+            state.busy()
+              ? 'Sprawdzanie…'
+              : state.selectedCount()
+                ? 'Podgląd projektu →'
+                : 'Podgląd obszaru →'
+          }}
+        </button>
+      } @else {
+        <button class="gp-button" [disabled]="state.locked()" (click)="state.go(1)">
+          Edytuj obszar</button
+        ><button class="gp-primary flex-1" [disabled]="!state.canSave()" (click)="state.save()">
+          {{ state.busy() ? 'Zapisywanie…' : 'Zapisz projekt' }}
+        </button>
+      }
+    </footer>
+  </aside>
+  <section class="map-pane" aria-label="Mapa projektu">
+    <div
+      #mapHost
+      class="map-host"
+      role="region"
+      aria-label="Mapa obszaru projektu"
+      tabindex="0"
+      [attr.inert]="state.locked() ? '' : null"
+    ></div>
+    @if (state.step() === 1) {
+      <gp-map-tools
+        class="map-tools"
+        [hasArea]="!!state.bounds()"
+        [drawing]="drawing()"
+        [disabled]="state.locked()"
+        (drawRequested)="draw()"
+        (resizeRequested)="state.resize($event)"
+      />
+    }
+    @if (state.step() < 2 && state.contextStatus()) {
+      <p class="context-notice" role="status">{{ state.contextStatus() }}</p>
+    }
+    @if (!mapAvailable()) {
+      <p class="map-notice" role="status">Podkład niedostępny. Edycja obszaru nadal działa.</p>
+    }
+    @if (state.dimensions()) {
+      <div class="map-dimensions" role="status">
+        {{ state.dimensions() }} <span class="text-stone-400">·</span>
+        {{
+          state.areaInvalid()
+            ? 'Nieprawidłowy obszar'
+            : state.step() === 2
+              ? 'Podgląd projektu'
+              : 'Obszar projektu'
+        }}
+      </div>
+    }
+    <button
+      class="map-source"
+      (click)="sourceOpen.set(!sourceOpen())"
+      [attr.aria-expanded]="sourceOpen()"
+    >
+      Źródło i legenda ⓘ
+    </button>
+    @if (sourceOpen()) {
+      <div class="source-popover">
+        <strong>Mapa poglądowa</strong>
+        <p>
+          Szare: orientacyjne obrysy działek. Pomarańczowe: wybrane działki. Zielone przerywane:
+          propozycje. Niebieski: obszar projektu.
+        </p>
+        @if (state.preview()?.provenance ?? state.contextProvenance(); as provenance) {
+          <p>
+            {{ provenance.provider }} · {{ provenance.sourceDataDate ?? 'brak daty' }} · EPSG:2180
+          </p>
+          @for (limitation of provenance.limitations; track $index) {
+            <p>{{ limitation }}</p>
+          }
+        }
+      </div>
+    }
+  </section>
+</div>

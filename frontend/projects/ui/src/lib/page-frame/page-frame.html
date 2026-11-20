@@ -1,14 +1,12 @@
 <a class="skip-link" href="#main-content">Przejdź do treści</a>
-
 <header class="header">
-  <div>
-    <span class="application-name">{{ applicationName() }}</span>
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true">▱</span
+    ><span class="application-name">{{ applicationName() }}</span>
     @if (contextLabel(); as label) {
       <span class="context-label">{{ label }}</span>
     }
   </div>
+  <div class="header-actions"><ng-content select="[header-actions]" /></div>
 </header>
-
-<main id="main-content" class="content" tabindex="-1">
-  <ng-content />
-</main>
+<main id="main-content" class="content" tabindex="-1"><ng-content /></main>

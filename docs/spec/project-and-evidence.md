@@ -2,7 +2,7 @@
 
 ## Scope
 
-Current retained legacy application. An operator prepares one configured spatial
+The retained legacy application is described below. An operator prepares one configured spatial
 subject for a map user. There is no project creation, project switcher, parcel
 lookup form, or source-refresh action in the browser. Replacement project and
 acquisition expectations belong to [requirements](../requirements/index.md).
@@ -61,45 +61,131 @@ The editor rebuilds and reloads an open page when inputs change. Reload discards
 transient navigation and unfinished drafts. A failed rebuild or reload poll
 leaves the current browser page without a dedicated warning.
 
-## Planned Change (Draft)
+## Replacement Application: Simulator Slice
 
-The approved PROJECT-001 replacement scope is not yet implemented; the legacy
-workflow above remains unchanged. Product behavior and limits are owned by
-[PROJECT-001](../requirements/projects-and-aoi.md#project-001--create-a-project-from-an-interactive-working-area).
-The application API proposal still requires owner review before frontend client
-generation or production provider calls.
+The Angular workspace provides a complete fixture journey: search/select ->
+area -> preview/name/save -> saved project map. It fills the viewport, keeping
+map and primary actions visible. Desktop has a side panel; mobile places a
+bounded panel below the map. Result lists and panel contents scroll internally.
+The simulator combines frozen public-source samples with named synthetic fault
+fixtures and keeps project/idempotency state in memory. Live provider access,
+backend persistence and national geographic coverage remain unimplemented or
+unverified.
 
-A user can pan and zoom an interactive map across Poland and search for a
-voivodeship, locality, street, or parcel number. Search results are typed and
-ambiguous matches require an explicit choice. Parcels can also be selected by
-clicking the map or entering an identifier. A project may be created without any
-selected parcel.
+Search advances after an explicit search-result choice or deliberate map-only
+entry. Typed text, restored preferences and map navigation alone do not establish
+location intent. Returning to area editing permits correction of an existing
+invalid rectangle; that rectangle still blocks review and save.
 
-An unambiguous parcel can suggest an initial rectangular working area with
-100 m of context. The user can draw an area anywhere and resize it by dragging
-edges or corners or through an accessible alternative. Later parcel selection
-does not silently replace a manually edited rectangle. Parcel boundaries stay
-unchanged; the working rectangle may cover only part of a selected parcel, and
-the preview warns when selected geometry extends outside it.
+Search is a guided sequence with one active input: **Miejscowość**, optional
+**Ulica**, then an explicit choice of **Numer budynku** or **Krótki numer działki**.
+Street and number can be skipped. A separate **Mam pełny numer działki** shortcut
+looks up a full identity without a locality. There is no smart input-kind
+detection or simultaneous multi-field form. Selecting a locality opens street
+lookup; selecting a street opens the number choice. Changing an upstream choice
+invalidates downstream lookup context, drafts and obsolete requests/cursors.
+House numbers require a chosen street; they are not parcel numbers.
 
-The backend mediates raster map tiles through configured sources; the browser
-does not access providers directly or submit arbitrary URLs. The provider and
-full coverage for map scales and place-search types are not yet selected. The
-preview includes the rectangle, optional parcel geometries, CRS, source,
-observation date, attribution, warnings, and uncertainty. This is indicative
-spatial evidence, not a legal, cadastral, or surveying determination.
+Locality/full-identity/number fields use explicit search or Enter. Street lookup
+supports a name fragment from three characters after 400 ms. Guidance belongs
+to the active input immediately, including before typing. A locality-only query
+does not enumerate child streets or addresses. Ambiguous source names show
+administrative descriptions for explicit choice. Five-row pages and explicit
+**Pokaż więcej** remain bounded within the panel. Source errors and partial
+snapshot coverage are distinguished from a reliable empty result.
 
-The project permits zero to 100 parcel identifiers. The parcel-subject envelope
-when present and the working rectangle are each limited to 2 km width, 2 km
-height, and 4 km²; incomplete, ambiguous, invalid, stale, or excessive inputs
-cannot create a project. Changing selection or rectangle invalidates the preview.
-Before create, the backend validates the exact rectangle and re-resolves selected
-parcels, and saves only a complete result matching the preview. Reopening by a
-stable address after backend restart restores the area, selected parcel data,
-CRS, and relevant provenance. No partial project is reported as successful.
+Stage 1 is navigation and lookup only. Map outlines are read-only, there are no
+area-drawing or subject-add/remove controls, and state guards reject those
+commands. A found parcel is resolved and framed, not added to the project.
+**Pomiń wyszukiwanie — wybiorę na mapie** explicitly opens stage 2 without
+creating an area. Otherwise a chosen result establishes location intent.
+
+Short parcel numbers are restricted to the explicitly described visible map
+neighbourhood, up to 2 × 2 km. A wide view asks for zoom-in; a locality point is
+not its cadastral boundary. Full identities bypass map bounds. The user enters
+no coordinates or precinct codes. Choosing a street and then a short parcel
+number does not assert that a parcel belongs to that street.
+
+Only stage 2 permits parcel selection/removal, area drawing/resizing, discovery
+and explicit fitting. A located parcel has a **Dodaj znalezioną działkę do
+projektu** action there. Returning to lookup retains already selected project
+subjects and the working area, with read-only display. Existing invalid areas
+can return to stage 2 for correction but cannot enter stage 3.
+
+The simulator combines frozen public-source samples for Ciężkowice, Bobowa and
+Gromnik, an archived orthophoto/parcel fragment of Ciężkowice, and separately
+named synthetic fault cases. These are limited offline samples, not live
+national coverage. Actual source IDs, polygons/holes and available source dates
+are preserved after CRS normalization. Details and examples belong to the
+[fixture catalogue](../architecture/simulator-fixtures.md).
+Selection alone creates no working rectangle; only drawing or
+**Dopasuj do działek** creates one.
+
+In stage 2, draw an intentional rectangle on the map or explicitly fit selected parcels.
+Keyboard-accessible map buttons resize an existing rectangle without coordinate
+or dimension entry. An invalid rectangle has a red outline, a persistent error
+and a disabled continuation action; navigation guards also reject advancing.
+With a chosen location/parcel or an explicit map-only choice, search advances to stage 2
+so the user can select subjects, draw or explicitly fit parcels. Dimensions are
+read-only on the map. The source geometry of selected parcels remains separate.
+Area discovery proposes positive-area intersections for explicit addition;
+boundary-only contact is excluded. Existing selected subjects survive edits. Clicking a selected parcel on the
+map deselects it; this preserves the current working rectangle.
+Loading, unavailable, truncated, empty and failed discovery remain distinguishable.
+A separate faint outline layer loads parcel geometries for a settled viewport
+up to 2 × 2 km, bounded to 100 records. Wider views request zooming in; viewport
+changes cancel obsolete reads. Outlines are indicative and do not select parcels
+or alter the project area. Empty, failed, unavailable and incomplete views have
+separate messages. The selected-parcel list uses remaining panel space in area
+and preview rather than a fixed small height.
+**Dopasuj do działek** explicitly fits all selected subjects plus the buffer
+(default 100 m, slider 0-500 m). Buffer changes alone preserve the manual area.
+An excessive fit keeps the previous area and reports the 2 km bound.
+
+A valid area can be reviewed without selected parcel subjects. The action is
+**Podgląd obszaru** in that case and the summary says **Bez wybranych działek**;
+this describes user selection, not the absence of parcels in the real world.
+Preview validates the exact rectangle/selection and frames the map for review.
+The user provides a project name and explicitly saves. The parcel list and map
+are read-only in preview, with no removal actions. To change geometry or subjects,
+the user returns to editing, which invalidates preview; name changes are independently validated at save. Source,
+date, CRS, legend and uncertainty are available through compact details. Saved
+projects show a bounded map cutout, title, dimensions and optional source details.
+Imagery and parcel rendering are clipped to the saved rectangle. Pan and zoom
+stay within that frame; zooming out cannot return to the national map. The
+current cutout reloads the available fixture tiles rather than storing an immutable image
+snapshot. Persisted source snapshots, layer composition and private planning
+drawings are subsequent acquisition/sketch capabilities.
+
+If a create result is unknown, the tab keeps the same command and idempotency
+key for explicit retry. Closing the tab or restarting the simulator loses the
+corresponding recovery/deduplication state; this is not durable recovery.
+Validated interface preferences (search/filter state and buffer) are remembered
+locally, independently of projects.
+
+Product screens contain no fixture catalogue or repeated developer instructions.
+The simulator development build exposes **Dane testowe** only after confirming
+connection; production builds do not probe or expose these facilities. All
+current data and representative journeys are in the
+[fixture catalogue](../architecture/simulator-fixtures.md).
+
+## Production Integration Limitations
+
+The Angular flow above runs against the offline contract simulator. Live
+provider mediation and durable Kotlin project storage remain unimplemented;
+their accepted target behaviour is owned by
+[PROJECT-001 requirements](../requirements/projects-and-aoi.md#project-001--create-a-project-from-an-interactive-working-area)
+and the [integration handoff](../architecture/public-api-integration.md).
+Passing fixture tests does not establish national coverage or persistence after
+restarting the simulator. The retained legacy workflow is unchanged.
 
 ## Evidence
 
+- [Angular workflow state](../../frontend/src/app/features/project-creation/project-creation-state.ts),
+  [workflow regressions](../../frontend/src/app/features/project-creation/project-creation-state.spec.ts)
+  and [browser journeys](../../frontend/e2e/interactive-project.spec.ts) cover the
+  simulator-backed flow. The owner accepted this frontend/simulator result and
+  requested plan closure on 2026-11-20; production integration remains separate.
 - [Builder](../../mapa/scripts/build_map.py), [refresh implementation](../../mapa/scripts/update_sources.py), and [editor](../../mapa/scripts/edit_map_server.py).
 - [Characterization](../../tests/test_build_map.py) and [synthetic project fixtures](../../tests/test_project_fixtures.py) cover deterministic assembly and selected failure paths.
 - [Exact integration inventory](../research/current-public-integrations.md) owns protocol requests and dated provider evidence.

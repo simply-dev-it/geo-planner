@@ -130,7 +130,9 @@ impossible in production builds.
 
 ## Forms
 
-- Use strictly typed Reactive Forms by default for stable production forms.
+- Follow the project-selected form system. For signal-first Angular 22 work,
+  use stable typed Signal Forms when selected; existing Reactive Forms remain
+  valid until an authorized migration replaces them.
 - Keep form models separate from API commands; normalize and validate before
   mapping a submission.
 - Surface server field errors without replacing client validation.
@@ -157,8 +159,9 @@ impossible in production builds.
 - Use Angular HTTP testing utilities and fixtures derived from accepted API examples.
 - Prefer stable asynchronous completion and visible assertions over arbitrary
   sleeps or indiscriminate change-detection calls.
-- Use component workshops for isolated reusable-UI states when the repository
-  adopts one; they complement rather than replace application journeys.
+- When the project adopts Storybook, accompany reusable interactive components
+  with stories for relevant loading, empty, error, ready and disabled states.
+  Stories complement rather than replace application journeys.
 - Add real-browser tests for interactions that depend on layout, browser APIs,
   accessibility, downloads, or third-party rendering.
 - Gate on formatting, lint or static analysis, type checking, unit tests,
