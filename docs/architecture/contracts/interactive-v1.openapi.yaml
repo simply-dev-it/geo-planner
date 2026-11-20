@@ -1,0 +1,1129 @@
+openapi: 3.1.0
+info:
+  title: Geo Planner Interactive Project API (Proposal)
+  version: 0.4.0
+  description: |
+    PROVISIONAL CONTRACT: the interactive PROJECT-001 design is derived from owner
+    decisions and official public-service documentation, then exercised with
+    frozen public samples and synthetic offline fault fixtures. The owner authorized frontend implementation
+    against this contract and the simulator, not production backend guarantees.
+    The provider, tile matrix mapping, place-search coverage, geometry
+    canonicalization, fingerprint precision, idempotency retention/recovery,
+    authentication, source-date semantics, and authoritative contract location
+    require review during integration with the owner's backend.
+    Simulator success is not evidence of live provider access or durable state.
+x-contract-status: provisional-frontend
+servers:
+  - url: /api/v1
+    description: Proposed same-origin product API base path; version is provisional.
+tags:
+  - name: Map
+    description: Backend-mediated allowlisted map imagery.
+  - name: Search
+    description: Typed, disambiguated location and parcel search.
+  - name: Projects
+    description: Interactive area preview, creation, and reopening.
+paths:
+  /map/layers/{layerId}/tiles/{z}/{x}/{y}:
+    get:
+      tags: [Map]
+      operationId: getMapTile
+      x-product-tile-grid:
+        crs: EPSG:2180
+        axisOrder: easting-northing
+        extent: [-1000000, -1000000, 2000000, 2000000]
+        origin: [-1000000, 2000000]
+        tileSizePixels: 256
+        zoomRange: [0, 18]
+        resolutionFormula: "3000000 / (256 * 2^z) metres per pixel"
+        defaultLayerId: base-map
+        providerMapping: "Backend adapts WMS/WMTS axes, matrix IDs, grid and pixels. Never forward product z/x/y blindly."
+      summary: Retrieve one raster tile from a server-configured map layer.
+      description: |
+        The client supplies only a layer identifier and bounded tile coordinates;
+        arbitrary provider URLs are never accepted. This proposal uses normalized
+        XYZ coordinates. The backend must map them to an explicitly configured
+        source and prove that the selected service's tile matrix, projection,
+        coverage, licensing, attribution, and cache policy support that mapping.
+        The offline simulator returns 256x256 PNG tiles from an archived public
+        orthophoto crop, sparse captured public street vectors, or separately
+        named synthetic fixtures. Coverage is partial and source-qualified;
+        fixture rendering does not establish live national map coverage.
+      parameters:
+        - name: layerId
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 64
+        - name: z
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 18
+        - name: x
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 0
+        - name: y
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 0
+      responses:
+        "200":
+          description: A tile with source attribution and cache metadata.
+          headers:
+            X-Map-Attribution:
+              description: Provider-required visible attribution text.
+              schema:
+                type: string
+            Cache-Control:
+              description: Cache policy approved for the selected source.
+              schema:
+                type: string
+            X-Simulator-Fixture:
+              description: Simulator-only marker distinguishing archived orthophoto, captured public vectors and synthetic imagery.
+              schema:
+                type: string
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "502":
+          $ref: "#/components/responses/ProviderResponseInvalid"
+        "503":
+          $ref: "#/components/responses/ProviderUnavailable"
+        "504":
+          $ref: "#/components/responses/ProviderTimeout"
+  /search:
+    get:
+      tags: [Search]
+      operationId: searchLocations
+      summary: Look up a place/address, street or parcel using explicit field intent.
+      description: |
+        The UI guides one input at a time: locality, optional street, then an
+        explicit house-number or short-parcel-number choice; full parcel identity
+        is an independent shortcut. Address kind takes query as the house number
+        and requires chosen locality/street IDs or names. The backend composes
+        the provider request and normalizes address descriptors.
+        The explicit place kind queries UUG location/address candidates, not parcels.
+        No content-based inference chooses the user's search method.
+        Place/address lookup is submitted explicitly. Street lookup may debounce
+        from three characters because PRG supports native name filtering and paging.
+        needs_context is a successful lookup outcome requiring narrower input,
+        not a provider failure; it returns empty candidates and null nextCursor.
+        Bare street names must not be silently mapped to same-named localities.
+        No local reference index or countrywide scan is permitted as a fallback.
+        The backend returns typed candidates and never silently chooses among
+        ambiguous results. Candidate kinds include locality,
+        street, address and parcel. Full locality and locality/street phrases
+        route to UUG. Explicit street kind routes to filtered PRG street WFS.
+        Precinct plus parcel number or full identity routes to ULDK.
+        A bare parcel number requires context. Provider coverage is qualified. Candidate context labels identify the
+        containing locality or administrative area when available. Provider-
+        specific GET query formats are not exposed to the client.
+      x-fixture-search: >-
+        The simulator accepts a full identifier or number plus precinct words;
+        a bare number returns needs_context. Repeated numbers
+        return explicitly contextualized candidates. Production semantics and
+        actual provider coverage require integration validation.
+      parameters:
+        - name: query
+          in: query
+          required: true
+          schema: {type: string, minLength: 1, maxLength: 120}
+        - name: regionId
+          in: query
+          schema: {type: string, maxLength: 64}
+        - name: countyId
+          in: query
+          description: County TERYT code; prefix of commune code.
+          schema: {type: string, maxLength: 64}
+        - name: communeId
+          in: query
+          description: Full commune TERYT code.
+          schema: {type: string, maxLength: 64}
+        - name: localityId
+          in: query
+          description: SIMC locality code; not a cadastral precinct.
+          schema: {type: string, maxLength: 64}
+        - name: streetId
+          in: query
+          description: ULIC code, qualified by locality or commune.
+          schema: {type: string, maxLength: 64}
+        - name: countyName
+          in: query
+          description: Human county name resolved through official PRG; ambiguity requires context.
+          schema: {type: string, maxLength: 120}
+        - name: communeName
+          in: query
+          description: Human commune name; mapped to native PRG street attribute filter.
+          schema: {type: string, maxLength: 120}
+        - name: localityName
+          in: query
+          description: Human locality name; not a cadastral-precinct assertion.
+          schema: {type: string, maxLength: 120}
+        - name: streetName
+          in: query
+          description: Chosen street label, paired with locality context for explicit address-number lookup.
+          schema: {type: string, maxLength: 120}
+        - name: bounds
+          in: query
+          description: Optional bounded viewport Emin,Nmin,Emax,Nmax in EPSG:2180 easting-northing; maximum 2 by 2 km.
+          schema: {type: string, maxLength: 128}
+        - name: type
+          in: query
+          schema: {type: string, enum: [place, parcel, locality, street, address]}
+        - name: limit
+          in: query
+          schema: {type: integer, minimum: 1, maximum: 5, default: 5}
+        - name: cursor
+          in: query
+          description: Opaque continuation bound to the same query, filters and page size.
+          schema: {type: string, maxLength: 256}
+        - $ref: "#/components/parameters/CorrelationId"
+      responses:
+        "200":
+          description: Search candidates, ambiguity, or no match.
+          headers:
+            X-Correlation-Id:
+              $ref: "#/components/headers/CorrelationId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "502":
+          $ref: "#/components/responses/ProviderResponseInvalid"
+        "503":
+          $ref: "#/components/responses/ProviderUnavailable"
+        "504":
+          $ref: "#/components/responses/ProviderTimeout"
+  /search/filters:
+    get:
+      tags: [Search]
+      operationId: getSearchFilters
+      summary: Read the bounded region filter catalogue.
+      responses:
+        "200":
+          description: Server-owned filter choices.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchFilters"
+        "503":
+          $ref: "#/components/responses/ProviderUnavailable"
+  /parcels/resolve:
+    post:
+      tags: [Search]
+      operationId: resolveParcel
+      summary: Resolve a parcel by map point or full identifier.
+      description: |
+        A point selector is used after a map click; an identifier selector is
+        used after text search or selection. Ambiguous point or number results
+        return candidates and must be explicitly selected. Geometry and source
+        metadata are informational, not legal or cadastral confirmation.
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ParcelResolveRequest"
+      responses:
+        "200":
+          description: A resolved parcel, ambiguity candidates, or no match.
+          headers:
+            X-Correlation-Id:
+              $ref: "#/components/headers/CorrelationId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ParcelResolveResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "413":
+          $ref: "#/components/responses/RequestTooLarge"
+        "502":
+          $ref: "#/components/responses/ProviderResponseInvalid"
+        "503":
+          $ref: "#/components/responses/ProviderUnavailable"
+        "504":
+          $ref: "#/components/responses/ProviderTimeout"
+  /parcels/intersections:
+    post:
+      tags: [Search]
+      operationId: findIntersectingParcels
+      summary: Discover parcel geometries intersecting a bounded rectangle.
+      description: |
+        Read-only discovery; never changes the project's selected subjects.
+        Used independently for viewport outlines and working-area suggestions.
+        Return parcels with positive-area intersection, excluding boundary-only
+        contact, in stable identifier order. Return at most 100 candidates.
+        Complete refers only to declared source coverage; an empty complete
+        result never proves that no parcels exist outside that coverage.
+        Truncated results are explicit and must not be labelled exhaustive.
+        Unavailable coverage returns no candidates with unavailable status;
+        upstream failures use structured errors. Do not infer identities from
+        raster images or a sample of point queries. Simulator geometry includes
+        captured polygons with holes and separate rectangular fault fixtures.
+        Production query completeness and polygon validation remain backend work.
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ParcelIntersectionRequest"
+      responses:
+        "200":
+          description: Source-qualified suggestions for exactly the requested extent.
+          headers:
+            X-Correlation-Id:
+              $ref: "#/components/headers/CorrelationId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ParcelIntersectionResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "413":
+          $ref: "#/components/responses/RequestTooLarge"
+        "502":
+          $ref: "#/components/responses/ProviderResponseInvalid"
+        "503":
+          $ref: "#/components/responses/ProviderUnavailable"
+        "504":
+          $ref: "#/components/responses/ProviderTimeout"
+  /projects/previews:
+    post:
+      tags: [Projects]
+      operationId: previewProjectArea
+      summary: Validate a working rectangle and preview optional parcel selections.
+      description: |
+        A zero-parcel selection is valid. `workingExtent` is an editable
+        rectangular area; it may intersect only part of a selected parcel, whose
+        original geometry remains unchanged. `ready` includes a versioned
+        fingerprint. `incomplete` and `outside_limits` responses never include a
+        usable fingerprint and cannot be submitted for creation. Limits apply
+        independently to the parcel-subject envelope, when present, and the
+        working rectangle; disconnected parcel gaps count in the subject envelope.
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PreviewRequest"
+            examples:
+              areaWithoutParcels:
+                value:
+                  parcelIds: []
+                  workingExtent:
+                    crs: EPSG:2180
+                    axisOrder: easting-northing
+                    bounds: [100000, 200000, 100400, 200300]
+              partiallyIntersectedParcel:
+                value:
+                  parcelIds: ["999999_9.9999.1"]
+                  workingExtent:
+                    crs: EPSG:2180
+                    axisOrder: easting-northing
+                    bounds: [100050, 200000, 100120, 200100]
+      responses:
+        "200":
+          description: A ready, incomplete, or over-limit preview.
+          headers:
+            X-Correlation-Id:
+              $ref: "#/components/headers/CorrelationId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Preview"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "413":
+          $ref: "#/components/responses/RequestTooLarge"
+        "502":
+          $ref: "#/components/responses/ProviderResponseInvalid"
+        "503":
+          $ref: "#/components/responses/ProviderUnavailable"
+        "504":
+          $ref: "#/components/responses/ProviderTimeout"
+  /projects:
+    post:
+      tags: [Projects]
+      operationId: createProject
+      summary: Revalidate and create a project from a matching preview.
+      description: |
+        The backend re-resolves selected parcels and validates the exact
+        submitted rectangle. It persists only a complete result matching the
+        fingerprint and returns a stable project identity. Same-key/same-payload
+        retries replay the original result; same-key/different-payload returns
+        `IDEMPOTENCY_CONFLICT`. No automatic frontend mutation retry is allowed.
+        Durable idempotency, retention, and recovery after browser/backend
+        restarts remain owner decisions. The simulator stores attempts in memory only.
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/CorrelationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProjectRequest"
+      responses:
+        "201":
+          description: Project created.
+          headers:
+            Location:
+              $ref: "#/components/headers/ProjectLocation"
+            X-Correlation-Id:
+              $ref: "#/components/headers/CorrelationId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "200":
+          description: Original result replayed for the same key and payload.
+          headers:
+            Idempotency-Replayed:
+              schema:
+                type: boolean
+                const: true
+            Location:
+              $ref: "#/components/headers/ProjectLocation"
+            X-Correlation-Id:
+              $ref: "#/components/headers/CorrelationId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "413":
+          $ref: "#/components/responses/RequestTooLarge"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "502":
+          $ref: "#/components/responses/ProviderResponseInvalid"
+        "503":
+          $ref: "#/components/responses/ProviderUnavailable"
+        "504":
+          $ref: "#/components/responses/ProviderTimeout"
+  /projects/{projectId}:
+    get:
+      tags: [Projects]
+      operationId: getProject
+      summary: Reopen a persisted project by its stable identifier.
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/CorrelationId"
+      responses:
+        "200":
+          description: The saved project area and selected parcel evidence.
+          headers:
+            X-Correlation-Id:
+              $ref: "#/components/headers/CorrelationId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+components:
+  parameters:
+    CorrelationId:
+      name: X-Correlation-Id
+      in: header
+      required: false
+      schema:
+        type: string
+        maxLength: 128
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Stable for the same create attempt and exact normalized payload.
+      schema:
+        type: string
+        minLength: 16
+        maxLength: 128
+  headers:
+    CorrelationId:
+      description: Request correlation identifier.
+      schema:
+        type: string
+        maxLength: 128
+    ProjectLocation:
+      description: Stable same-origin address of the created or replayed project.
+      schema:
+        type: string
+        format: uri-reference
+  responses:
+    BadRequest:
+      description: Invalid input, CRS, geometry, or request shape.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    Conflict:
+      description: Stale preview or idempotency key used with another payload.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    NotFound:
+      description: The layer or project does not exist.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    ProviderResponseInvalid:
+      description: Upstream provider returned invalid, oversized, or unrecognized data.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    ProviderUnavailable:
+      description: A configured provider is unavailable.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    ProviderTimeout:
+      description: A configured provider did not respond within the server limit.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    RequestTooLarge:
+      description: The request exceeds configured byte or item limits.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    UnprocessableEntity:
+      description: Incomplete or over-limit selection cannot create a project.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+  schemas:
+    SearchFilters:
+      type: object
+      additionalProperties: false
+      required: [regions]
+      properties:
+        regions:
+          type: array
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/SearchFilter"
+    SearchFilter:
+      type: object
+      additionalProperties: false
+      required: [id, label]
+      properties:
+        id: {type: string, minLength: 1, maxLength: 64}
+        label: {type: string, minLength: 1, maxLength: 256}
+        regionId: {type: string, maxLength: 64}
+    SearchResult:
+      type: object
+      additionalProperties: false
+      required: [status, candidates, nextCursor, provenance]
+      properties:
+        status:
+          type: string
+          enum: [ready, ambiguous, no_match, needs_context]
+        contextPrompt:
+          type: string
+          minLength: 1
+          maxLength: 512
+          description: Required for needs_context; explain missing locality or precinct. This status has no candidates or continuation.
+        candidates:
+          type: array
+          maxItems: 5
+          items:
+            $ref: "#/components/schemas/SearchCandidate"
+        nextCursor:
+          type: [string, "null"]
+          maxLength: 256
+        provenance:
+          $ref: "#/components/schemas/Provenance"
+    SearchCandidate:
+      type: object
+      additionalProperties: false
+      required: [id, type, label, center, extent, crs, axisOrder, source]
+      properties:
+        regionId:
+          type: string
+        localityId:
+          type: string
+        streetId:
+          type: string
+          maxLength: 64
+          description: Source street code, qualified by locality; retained for house-number lookup.
+        id:
+          type: string
+          minLength: 1
+          maxLength: 128
+        type:
+          type: string
+          enum: [voivodeship, locality, street, parcel, point_address]
+        label:
+          type: string
+          minLength: 1
+          maxLength: 256
+        contextLabel:
+          type: string
+          minLength: 1
+          maxLength: 256
+          description: Human-readable locality or administrative context for disambiguation.
+        parcelId:
+          $ref: "#/components/schemas/ParcelId"
+        center:
+          $ref: "#/components/schemas/Position"
+        extent:
+          $ref: "#/components/schemas/SearchExtent"
+        crs:
+          type: string
+          const: EPSG:2180
+        axisOrder:
+          type: string
+          const: easting-northing
+        source:
+          type: string
+          maxLength: 128
+    ParcelResolveRequest:
+      type: object
+      additionalProperties: false
+      required: [selector]
+      properties:
+        selector:
+          oneOf:
+            - $ref: "#/components/schemas/PointSelector"
+            - $ref: "#/components/schemas/IdentifierSelector"
+    PointSelector:
+      type: object
+      additionalProperties: false
+      required: [type, coordinates, crs]
+      properties:
+        type:
+          type: string
+          const: point
+        coordinates:
+          $ref: "#/components/schemas/Position"
+        crs:
+          type: string
+          const: EPSG:2180
+    IdentifierSelector:
+      type: object
+      additionalProperties: false
+      required: [type, value]
+      properties:
+        type:
+          type: string
+          const: identifier
+        value:
+          $ref: "#/components/schemas/ParcelId"
+    ParcelResolveResult:
+      type: object
+      additionalProperties: false
+      required: [status, parcel, candidates]
+      properties:
+        status:
+          type: string
+          enum: [resolved, ambiguous, not_found]
+        parcel:
+          oneOf:
+            - $ref: "#/components/schemas/ResolvedParcel"
+            - type: "null"
+        candidates:
+          type: array
+          items:
+            $ref: "#/components/schemas/ParcelCandidate"
+    ParcelCandidate:
+      type: object
+      additionalProperties: false
+      required: [id, source]
+      properties:
+        parcelNumber:
+          type: string
+          minLength: 1
+          maxLength: 64
+          description: Human parcel number; preserve fractional numbers such as 1092/2.
+        contextLabel:
+          type: string
+          minLength: 1
+          maxLength: 256
+          description: Administrative or cadastral-precinct context for human disambiguation.
+        id:
+          $ref: "#/components/schemas/ParcelId"
+        inputId:
+          $ref: "#/components/schemas/ParcelId"
+        geometry:
+          $ref: "#/components/schemas/SpatialGeometry"
+        crs:
+          type: string
+          const: EPSG:2180
+        axisOrder:
+          type: string
+          const: easting-northing
+        source:
+          type: string
+        limitations:
+          type: array
+          items:
+            type: string
+    ParcelIntersectionRequest:
+      type: object
+      additionalProperties: false
+      required: [workingExtent]
+      properties:
+        workingExtent:
+          $ref: "#/components/schemas/WorkingExtentInput"
+    ParcelIntersectionResult:
+      type: object
+      additionalProperties: false
+      required: [status, workingExtent, candidates, provenance]
+      properties:
+        status:
+          type: string
+          enum: [complete, truncated, unavailable]
+        workingExtent:
+          $ref: "#/components/schemas/WorkingExtentInput"
+        candidates:
+          type: array
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/ResolvedParcel"
+        provenance:
+          $ref: "#/components/schemas/Provenance"
+    PreviewRequest:
+      type: object
+      additionalProperties: false
+      required: [parcelIds, workingExtent]
+      properties:
+        parcelIds:
+          type: array
+          minItems: 0
+          maxItems: 100
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/ParcelId"
+        workingExtent:
+          $ref: "#/components/schemas/WorkingExtentInput"
+    CreateProjectRequest:
+      type: object
+      additionalProperties: false
+      required: [name, parcelIds, workingExtent, previewFingerprint]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 160
+        parcelIds:
+          type: array
+          minItems: 0
+          maxItems: 100
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/ParcelId"
+        workingExtent:
+          $ref: "#/components/schemas/WorkingExtentInput"
+        previewFingerprint:
+          $ref: "#/components/schemas/PreviewFingerprint"
+    WorkingExtentInput:
+      type: object
+      additionalProperties: false
+      required: [crs, axisOrder, bounds]
+      properties:
+        crs:
+          type: string
+          const: EPSG:2180
+        axisOrder:
+          type: string
+          const: easting-northing
+        bounds:
+          type: array
+          minItems: 4
+          maxItems: 4
+          description: "[minEasting, minNorthing, maxEasting, maxNorthing], in metres."
+          items:
+            type: number
+            minimum: -10000000
+            maximum: 10000000
+    Preview:
+      type: object
+      additionalProperties: false
+      required:
+        - status
+        - issues
+        - selectedParcels
+        - parcelSubjectExtent
+        - workingExtent
+        - warnings
+        - provenance
+        - previewFingerprint
+      properties:
+        status:
+          type: string
+          enum: [ready, incomplete, outside_limits]
+        issues:
+          type: array
+          items:
+            type: string
+            enum:
+              - UNRESOLVED_PARCEL
+              - AMBIGUOUS_PARCEL
+              - WORKING_EXTENT_EXCEEDED
+              - PARCEL_SUBJECT_EXCEEDED
+        selectedParcels:
+          type: array
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/SelectedParcel"
+        parcelSubjectExtent:
+          oneOf:
+            - $ref: "#/components/schemas/SpatialExtent"
+            - type: "null"
+        workingExtent:
+          $ref: "#/components/schemas/SpatialExtent"
+        warnings:
+          type: array
+          items:
+            $ref: "#/components/schemas/PreviewWarning"
+        provenance:
+          $ref: "#/components/schemas/Provenance"
+        previewFingerprint:
+          oneOf:
+            - $ref: "#/components/schemas/PreviewFingerprint"
+            - type: "null"
+          description: Present only for a complete ready preview.
+    Project:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - name
+        - createdAt
+        - parcelIds
+        - workingExtent
+        - selectedParcels
+        - previewFingerprint
+        - provenance
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 160
+        createdAt:
+          type: string
+          format: date-time
+        parcelIds:
+          type: array
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/ParcelId"
+        workingExtent:
+          $ref: "#/components/schemas/SpatialExtent"
+        selectedParcels:
+          type: array
+          items:
+            $ref: "#/components/schemas/SelectedParcel"
+        previewFingerprint:
+          $ref: "#/components/schemas/PreviewFingerprint"
+        provenance:
+          $ref: "#/components/schemas/Provenance"
+    SelectedParcel:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          inputId,
+          status,
+          id,
+          candidateIds,
+          geometry,
+          crs,
+          axisOrder,
+          source,
+          sourceDataDate,
+        ]
+      properties:
+        parcelNumber:
+          type: string
+          minLength: 1
+          maxLength: 64
+          description: Human parcel number; preserve fractional numbers such as 1092/2.
+        contextLabel:
+          type: string
+          minLength: 1
+          maxLength: 256
+          description: Administrative or cadastral-precinct context for human disambiguation.
+        inputId:
+          $ref: "#/components/schemas/ParcelId"
+        status:
+          type: string
+          enum: [resolved, unresolved, ambiguous]
+        id:
+          oneOf:
+            - $ref: "#/components/schemas/ParcelId"
+            - type: "null"
+        candidateIds:
+          type: array
+          items:
+            $ref: "#/components/schemas/ParcelId"
+        geometry:
+          oneOf:
+            - $ref: "#/components/schemas/SpatialGeometry"
+            - type: "null"
+        crs:
+          type: string
+          const: EPSG:2180
+        axisOrder:
+          type: string
+          const: easting-northing
+        source:
+          type: string
+        sourceDataDate:
+          type: [string, "null"]
+          format: date
+    ResolvedParcel:
+      type: object
+      additionalProperties: false
+      required:
+        [id, geometry, crs, axisOrder, source, sourceDataDate, limitations]
+      properties:
+        parcelNumber:
+          type: string
+          minLength: 1
+          maxLength: 64
+          description: Human parcel number; preserve fractional numbers such as 1092/2.
+        contextLabel:
+          type: string
+          minLength: 1
+          maxLength: 256
+          description: Administrative or cadastral-precinct context for human disambiguation.
+        id:
+          $ref: "#/components/schemas/ParcelId"
+        geometry:
+          $ref: "#/components/schemas/SpatialGeometry"
+        crs:
+          type: string
+          const: EPSG:2180
+        axisOrder:
+          type: string
+          const: easting-northing
+        source:
+          type: string
+        sourceDataDate:
+          type: [string, "null"]
+          format: date
+        limitations:
+          type: array
+          items:
+            type: string
+    SpatialGeometry:
+      type: object
+      additionalProperties: false
+      required: [type, coordinates, crs, axisOrder]
+      properties:
+        type:
+          type: string
+          enum: [Polygon, MultiPolygon]
+        coordinates:
+          oneOf:
+            - $ref: "#/components/schemas/PolygonCoordinates"
+            - $ref: "#/components/schemas/MultiPolygonCoordinates"
+        crs:
+          type: string
+          const: EPSG:2180
+        axisOrder:
+          type: string
+          const: easting-northing
+    PolygonCoordinates:
+      type: array
+      minItems: 1
+      items:
+        $ref: "#/components/schemas/LinearRing"
+    MultiPolygonCoordinates:
+      type: array
+      minItems: 1
+      items:
+        $ref: "#/components/schemas/PolygonCoordinates"
+    LinearRing:
+      type: array
+      minItems: 4
+      items:
+        $ref: "#/components/schemas/Position"
+    Position:
+      type: array
+      minItems: 2
+      maxItems: 2
+      items:
+        type: number
+    SearchExtent:
+      type: array
+      minItems: 4
+      maxItems: 4
+      description: "[minEasting, minNorthing, maxEasting, maxNorthing] in the candidate CRS."
+      items:
+        type: number
+    SpatialExtent:
+      type: object
+      additionalProperties: false
+      required:
+        - crs
+        - axisOrder
+        - bounds
+        - widthMetres
+        - heightMetres
+        - envelopeAreaSquareMetres
+      properties:
+        crs:
+          type: string
+          const: EPSG:2180
+        axisOrder:
+          type: string
+          enum:
+            - easting-northing
+            - minEasting-minNorthing-maxEasting-maxNorthing
+        bounds:
+          type: array
+          minItems: 4
+          maxItems: 4
+          items:
+            type: number
+        widthMetres:
+          type: number
+          minimum: 0
+        heightMetres:
+          type: number
+          minimum: 0
+        envelopeAreaSquareMetres:
+          type: number
+          minimum: 0
+    PreviewWarning:
+      type: object
+      additionalProperties: false
+      required: [code, parcelId]
+      properties:
+        code:
+          type: string
+          enum:
+            [
+              PARCEL_OUTSIDE_WORKING_EXTENT,
+              PARCEL_PARTLY_OUTSIDE_WORKING_EXTENT,
+            ]
+        parcelId:
+          $ref: "#/components/schemas/ParcelId"
+    Provenance:
+      type: object
+      additionalProperties: false
+      required: [provider, sourceDataDate, limitations]
+      properties:
+        provider:
+          type: string
+        operation:
+          type: string
+        sourceDataDate:
+          type: [string, "null"]
+          format: date
+        attribution:
+          type: string
+        limitations:
+          type: array
+          items:
+            type: string
+    ParcelId:
+      type: string
+      minLength: 1
+      maxLength: 64
+      description: Full cadastral identifier; number-only inputs may resolve ambiguously.
+    PreviewFingerprint:
+      type: string
+      pattern: "^v1:sha256:[a-f0-9]{64}$"
+      description: |
+        Opaque versioned result digest. The exact canonical geometry encoding,
+        precision, ring/component ordering, and included fields require owner
+        agreement before production implementation.
+    Problem:
+      type: object
+      additionalProperties: true
+      required: [type, title, status, detail, errorCode, correlationId]
+      properties:
+        type:
+          type: string
+          format: uri-reference
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        errorCode:
+          type: string
+          enum:
+            - INVALID_REQUEST
+            - INVALID_EXTENT
+            - UNSUPPORTED_CRS
+            - INVALID_SEARCH
+            - INVALID_SELECTOR
+            - PREVIEW_NOT_READY
+            - PREVIEW_CHANGED
+            - IDEMPOTENCY_CONFLICT
+            - MAP_LAYER_NOT_FOUND
+            - INVALID_TILE_COORDINATE
+            - SEARCH_UNAVAILABLE
+            - PROVIDER_RESPONSE_INVALID
+            - PROVIDER_UNAVAILABLE
+            - PROVIDER_TIMEOUT
+            - NOT_FOUND
+        correlationId:
+          type: string
+        fieldErrors:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [field, message]
+            properties:
+              field:
+                type: string
+              message:
+                type: string

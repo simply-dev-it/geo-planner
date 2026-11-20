@@ -3,6 +3,7 @@ const { defineConfig } = require('eslint/config');
 const rootConfig = require('../../eslint.config.js');
 
 module.exports = defineConfig([
+  { ignores: ['**/generated/**'] },
   ...rootConfig,
   {
     files: ['**/*.ts'],

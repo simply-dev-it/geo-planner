@@ -16,6 +16,12 @@
   when the separation has a concrete use case.
 - Prefer small public interfaces, explicit dependencies, and reversible changes.
 - Introduce dependencies and abstractions only for demonstrated needs.
+- Before adding workflow controls, write concrete user cases: user goal,
+  starting state, intentional action, resulting state, and forbidden transitions.
+  Include invalid input, correction, return to editing and read-only review.
+  Map each control to an evidenced case; omit convenience actions without one.
+  Derive regression scenarios and state guards from those cases, not only the
+  successful sequence of clicks.
 
 ## State And Safety
 

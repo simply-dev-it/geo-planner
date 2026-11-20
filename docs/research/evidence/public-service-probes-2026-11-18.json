@@ -1,0 +1,87 @@
+{
+  "observedOn": "2026-11-18",
+  "scope": "Nine bounded read-only public-authority API probes, maximum three WFS features; no legacy refresh or bulk collection.",
+  "probes": [
+    {
+      "name": "uug-locality",
+      "url": "https://services.gugik.gov.pl/uug?request=GetAddress&address=Marki",
+      "status": 200,
+      "contentType": "application/json;",
+      "bytes": 2934,
+      "truncated": false,
+      "sha256": "21c8a6f4c20a1a425a7cc9417215050b6ffb0b4ea4d0eab84930b1d691a3a657"
+    },
+    {
+      "name": "uug-street",
+      "url": "https://services.gugik.gov.pl/uug?request=GetAddress&address=Marki%2C+Andersa",
+      "status": 200,
+      "contentType": "application/json;",
+      "bytes": 652,
+      "truncated": false,
+      "sha256": "c8b10783b87ba6251f8679088f12f03f92a1ba674c30924dfc74f5ec34345b2a"
+    },
+    {
+      "name": "uldk-parcel",
+      "url": "https://uldk.gugik.gov.pl/?request=GetParcelById&id=141201_1.0001.6509&result=geom_wkt%2Cteryt%2Cparcel%2Cdatasource&srid=2180",
+      "status": 200,
+      "contentType": "text/plain; charset=UTF-8",
+      "bytes": 290,
+      "truncated": false,
+      "sha256": "56413b438747a09332535df267a65662fb47c41fbd7ab242e703ba2d51dc5efc"
+    },
+    {
+      "name": "wfs-capabilities",
+      "url": "https://mapy.geoportal.gov.pl/wss/service/PZGIK/EGIB/WFS/UslugaZbiorcza?service=WFS&version=2.0.0&request=GetCapabilities",
+      "status": 200,
+      "contentType": "text/xml; charset=UTF-8",
+      "bytes": 17245,
+      "truncated": false,
+      "sha256": "4e7665c16dfa8d5dd3d6c01045925cfc706700f03d858dca1ed12fb11a272bab"
+    },
+    {
+      "name": "wmts-capabilities",
+      "url": "https://mapy.geoportal.gov.pl/wss/service/WMTS/guest/wmts/BDOT10k-BDOO?service=WMTS&request=GetCapabilities",
+      "status": 200,
+      "contentType": "text/xml;charset=UTF-8",
+      "bytes": 105214,
+      "truncated": false,
+      "sha256": "a859b4ee7be7618126285f9dee74bf8e14511b843dddb12d2202715376058983"
+    },
+    {
+      "name": "kieg-capabilities",
+      "url": "https://integracja.gugik.gov.pl/cgi-bin/KrajowaIntegracjaEwidencjiGruntow?service=WMS&version=1.3.0&request=GetCapabilities",
+      "status": 200,
+      "contentType": "text/xml",
+      "bytes": 32318,
+      "truncated": false,
+      "sha256": "4498bb8cfe8f2a4194796446b1bfd73bdb656488e6623e7667f83f725f6ae4c2"
+    },
+    {
+      "name": "uug-prefix",
+      "url": "https://services.gugik.gov.pl/uug?request=GetAddress&address=Mar",
+      "status": 200,
+      "contentType": "application/json;",
+      "bytes": 86,
+      "truncated": false,
+      "sha256": "6c7dadd6fc825db275cc1da3c6f74b61011f8cb1c5d96cc2aed3f3a37bb8c94d"
+    },
+    {
+      "name": "wfs-schema",
+      "url": "https://mapy.geoportal.gov.pl/wss/service/PZGIK/EGIB/WFS/UslugaZbiorcza?service=WFS&version=2.0.0&request=DescribeFeatureType&typeNames=ms%3Adzialki",
+      "status": 200,
+      "contentType": "application/gml+xml; version=3.2; charset=UTF-8",
+      "bytes": 1596,
+      "truncated": false,
+      "sha256": "12dbf6a4587f6874404d56b7c257b2a9856d150a3c48ded4d03ad2d69fb84182"
+    },
+    {
+      "name": "wfs-bbox",
+      "url": "https://mapy.geoportal.gov.pl/wss/service/PZGIK/EGIB/WFS/UslugaZbiorcza?service=WFS&version=2.0.0&request=GetFeature&typeNames=ms%3Adzialki&count=3&outputFormat=application%2Fjson&srsName=EPSG%3A3857&bbox=2339835.6964746104%2C6841537.975124522%2C2340035.6964746104%2C6841737.975124522%2CEPSG%3A3857",
+      "status": 200,
+      "contentType": "application/json",
+      "bytes": 7973,
+      "truncated": false,
+      "sha256": "e0948d5141a8e57ffd93705b90f48f61de88d80000cf1a5ab0ae11cf1d2b2c2f"
+    }
+  ]
+}

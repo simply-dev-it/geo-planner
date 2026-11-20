@@ -86,6 +86,22 @@ if [ "${TASK_TEST_FAIL:-}" = "$(basename "$0")" ] || [ "${TASK_TEST_FAIL:-}" = "
             "npm --prefix frontend run storybook",
         ])
 
+    def test_frontend_simulator_flag_only_changes_frontend_proxy(self):
+        self.run_task("start", "frontend", "--simulator")
+        self.assertEqual(self.commands(), ["npm --prefix frontend run start:simulator"])
+        self.log.unlink()
+        self.run_task("start", "frontend")
+        self.assertEqual(self.commands(), ["npm --prefix frontend start"])
+
+    def test_simulator_flag_rejects_non_frontend_targets(self):
+        for args in [("--simulator",), ("backend", "--simulator"),
+                     ("simulator", "--simulator"), ("storybook", "--simulator"),
+                     ("--all", "--simulator"), ("frontend", "--all", "--simulator"),
+                     ("simulator-stack",), ("frontend-simulator",)]:
+            with self.subTest(args=args):
+                self.run_task("start", *args, success=False)
+        self.assertEqual(self.commands(), [])
+
     def test_build_routes_individual_targets_and_all(self):
         expected = {
             "backend": "gradlew :backend:bootJar",
