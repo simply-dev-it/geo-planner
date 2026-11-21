@@ -45,6 +45,8 @@
 
 - Test domain invariants, boundary validation, failure behavior, and unsafe
   inputs at the narrowest useful layer.
+- Test the current supported contract, not historical behavior of removed options
+  or inputs; test rejection only when it is part of an explicit current contract.
 - Add regression coverage for every correctness, parsing, persistence,
   integration, or public-contract bug.
 - Keep fixtures small, deterministic, and free of secrets or private data.

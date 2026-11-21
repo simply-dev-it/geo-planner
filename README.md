@@ -38,7 +38,7 @@ Open `http://localhost:4200`. Production provider integrations remain pending; t
 [Legacy map operation](mapa/README.md).
 
 For the implemented fixture workflow, run `mise run start simulator` and
-`mise run start frontend --simulator` in separate terminals. Run
+`mise run start frontend:simulator` in separate terminals. Run
 `mise run start storybook` for the UI component workshop.
 
 After making changes, run the repository-wide verification gate:
@@ -48,7 +48,7 @@ mise run verify
 ```
 
 Use `mise run build frontend` or `mise run build backend` to produce application
-artifacts, or `mise run build --all` to include the simulator and Storybook.
+artifacts, or `mise run build all` to include the simulator and Storybook.
 
 ## Documentation
 

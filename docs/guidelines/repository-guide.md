@@ -35,14 +35,17 @@ Run from the repository root with `mise run <task> [parameters]`:
 | Task | Parameters | Purpose |
 | --- | --- | --- |
 | `setup` | `--ci` optional | Install npm dependencies and Chromium; CI uses lockfiles and browser system dependencies. |
-| `start` | `frontend`, `backend`, `simulator`, `storybook`, or `--all`; `frontend` also accepts `--simulator` | Start selected services; `--simulator` enables the frontend proxy. |
-| `build` | `frontend`, `backend`, `simulator`, `storybook`, or `--all` | Build production artifacts. |
-| `verify` | `frontend`, `backend`, `simulator`, `requirements`, `legacy`, or `--all` | Run selected quality gates; no parameters runs every gate. |
-| `ci` | — | Run `setup --ci`, then `verify --all`. |
+| `start` | `frontend`, `backend`, `simulator`, `storybook`, `frontend:simulator`, or `all` | Start selected services; `frontend:simulator` enables the frontend proxy. |
+| `build` | `frontend`, `backend`, `simulator`, `storybook`, or `all` | Build production artifacts. |
+| `verify` | `frontend`, `backend`, `simulator`, `requirements`, `legacy`, or `all` | Run selected quality gates; no parameters or `all` runs every gate. |
+| `ci` | — | Run `setup --ci`, then `verify all`. |
 | `clean` | — | Remove generated application and test outputs. |
 
-For example: `mise run start frontend`. Choose one target or `--all`.
-`start` and `build` without parameters show help; `<task> --help` lists options.
+For example: `mise run start frontend`. Choose one target; use `all` to start
+every development service.
+`start` and `build` without parameters show help; `verify` without a target runs
+every gate. Use the `all` target for aggregate `build` and `verify` runs;
+`<task> --help` lists options.
 The hidden `verify-legacy` task remains equivalent to `verify legacy`.
 
 Aggregate `verify` includes task validation, workflow tests, local Markdown links,
@@ -89,7 +92,7 @@ frontend in separate terminals:
 
 ```bash
 mise run start simulator
-mise run start frontend --simulator
+mise run start frontend:simulator
 ```
 
 The simulator listens on port 4300 and the frontend on port 4200. If either
