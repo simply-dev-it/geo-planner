@@ -1,9 +1,11 @@
 # Geo Planner
 
 Geo Planner is being rebuilt as an Angular client backed by a Kotlin/Spring
-Boot application. The current repository contains the application foundation;
+Boot application. The current repository contains an interactive project workspace and fixture simulator;
 the target product will organize map evidence, projects, acquisition, sketches,
-and spatial analysis while preserving provenance and uncertainty.
+and spatial analysis while preserving provenance and uncertainty. The
+[product principles](docs/requirements/index.md#product-principles) require public,
+free-of-charge sources and backend processing that simplifies their combined use.
 
 Government, cadastral, planning, utility, and derived layers are informative
 unless an authoritative source and validation process explicitly establish
@@ -32,13 +34,12 @@ mise run start backend
 mise run start frontend
 ```
 
-Open `http://localhost:4200`. The current replacement is an application
-foundation; the retained working map is started separately according to
+Open `http://localhost:4200`. Production provider integrations remain pending; the retained working map is started separately according to
 [Legacy map operation](mapa/README.md).
 
-For focused development, run `mise run start simulator` instead of the backend when
-an accepted deterministic contract scenario exists, or `mise run start storybook`
-to start the UI workshop.
+For the implemented fixture workflow, run `mise run start simulator` and
+`mise run start frontend:simulator` in separate terminals. Run
+`mise run start storybook` for the UI component workshop.
 
 After making changes, run the repository-wide verification gate:
 
@@ -47,7 +48,7 @@ mise run verify
 ```
 
 Use `mise run build frontend` or `mise run build backend` to produce application
-artifacts, or `mise run build --all` to include the simulator and Storybook.
+artifacts, or `mise run build all` to include the simulator and Storybook.
 
 ## Documentation
 

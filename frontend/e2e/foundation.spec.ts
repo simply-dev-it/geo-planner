@@ -1,14 +1,14 @@
 import { expect, test } from '@playwright/test';
 
-test('shows the accessible foundation shell', async ({ page }) => {
+test('opens the accessible project workspace', async ({ page }) => {
   await page.goto('/');
 
-  await expect(page).toHaveTitle('Geo Planner — fundament aplikacji');
+  await expect(page).toHaveTitle('Nowy projekt — Geo Planner');
   await expect(page.getByRole('banner')).toContainText('Geo Planner');
   await expect(page.getByRole('main')).toBeVisible();
   await expect(
     page.getByRole('heading', {
-      name: 'Nowy interfejs jest przygotowany do migracji funkcji.',
+      name: 'Nowy projekt',
     }),
   ).toBeVisible();
   await expect(page.getByRole('link', { name: 'Przejdź do treści' })).toHaveAttribute(

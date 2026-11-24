@@ -2,7 +2,7 @@
 
 ## Status
 
-- Last updated: 2026-07-28
+- Last updated: 2026-11-19
 - Completed means: `VERIFIED`
 - Prototype migration discovery was accepted by the owner on 2026-07-28.
   Counts describe accepted requirements, not permission to implement them or a
@@ -11,6 +11,22 @@
 Create an application-area file only when discovery has produced at least one
 evidence-backed requirement for it. Potential areas are not counted before
 their concrete stories pass the discovery quality gate.
+
+## Product Principles
+
+Owner decisions recorded on 2026-11-19:
+
+- Use only public-authority services available without usage fees. Commercial
+  providers and paid/free-tier SaaS dependencies are outside the product model.
+  Public availability does not waive source terms, attribution or usage limits.
+- Process and normalize source data in our backend to offer a simpler user
+  experience than the individual public applications. UI controls follow
+  verified service capabilities rather than exposing upstream query syntax.
+- Aggregate complementary public sources into one coherent parcel-analysis
+  workspace. Preserve source identity, dates, coverage and uncertainty when
+  combining evidence; combined results do not imply analytical completeness.
+- Official services remain reference-data sources of truth. Maintain projects,
+  not a mirrored national city/street/cadastral registry or its refresh pipeline.
 
 <!-- requirements-summary:start -->
 

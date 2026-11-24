@@ -1,2 +1,2 @@
-// The public API remains empty until the backend publishes an accepted contract.
-export {};
+export * from './lib/facade/project-api';
+export * from './lib/facade/models';

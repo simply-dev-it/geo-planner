@@ -24,25 +24,21 @@ fi
 description = "Start a component or all development services"
 usage = '''
 arg "[target]" {
-  choices "frontend" "backend" "simulator" "storybook"
+  choices "frontend" "backend" "simulator" "storybook" "frontend:simulator" "all"
 }
-flag "--all" help="Run for all supported targets"
 '''
 run = '''
 set -eu
 target="${usage_target:-}"
-if [ "${usage_all:-false}" = true ]; then
-  if [ -n "$target" ]; then
-    echo "Choose a target or --all, not both." >&2
-    exit 2
-  fi
-  target=all
-elif [ -z "$target" ]; then
+if [ -z "$target" ]; then
   exec mise run start --help
 fi
-unset usage_target usage_all
+unset usage_target
 case "$target" in
-  frontend) exec npm --prefix frontend start ;;
+  frontend)
+    exec npm --prefix frontend start
+    ;;
+  frontend:simulator) exec npm --prefix frontend run start:simulator ;;
   backend) exec ./gradlew :backend:bootRun --console=plain ;;
   simulator)
     npm --prefix backend-simulator run build
@@ -57,23 +53,16 @@ esac
 description = "Build a component or all application and workshop artifacts"
 usage = '''
 arg "[target]" {
-  choices "frontend" "backend" "simulator" "storybook"
+  choices "frontend" "backend" "simulator" "storybook" "all"
 }
-flag "--all" help="Run for all supported targets"
 '''
 run = '''
 set -eu
 target="${usage_target:-}"
-if [ "${usage_all:-false}" = true ]; then
-  if [ -n "$target" ]; then
-    echo "Choose a target or --all, not both." >&2
-    exit 2
-  fi
-  target=all
-elif [ -z "$target" ]; then
+if [ -z "$target" ]; then
   exec mise run build --help
 fi
-unset usage_target usage_all
+unset usage_target
 if [ "$target" = backend ] || [ "$target" = all ]; then
   ./gradlew :backend:bootJar
 fi
@@ -89,26 +78,19 @@ fi
 '''
 
 [tasks.verify]
-description = "Verify a component; no arguments or --all runs every repository gate"
+description = "Verify a component; no arguments or all runs every repository gate"
 usage = '''
 arg "[target]" {
-  choices "frontend" "backend" "simulator" "requirements" "legacy"
+  choices "frontend" "backend" "simulator" "requirements" "legacy" "all"
 }
-flag "--all" help="Run for all supported targets"
 '''
 run = '''
 set -eu
 target="${usage_target:-}"
-if [ "${usage_all:-false}" = true ]; then
-  if [ -n "$target" ]; then
-    echo "Choose a target or --all, not both." >&2
-    exit 2
-  fi
-  target=all
-elif [ -z "$target" ]; then
+if [ -z "$target" ]; then
   target=all
 fi
-unset usage_target usage_all
+unset usage_target
 if [ "$target" = all ]; then
   mise tasks validate
   python3 -m unittest discover -s scripts -p 'test_mise_tasks.py'
@@ -138,7 +120,7 @@ run = "mise run verify legacy"
 description = "Install frozen dependencies, then run every repository quality gate"
 run = [
   "mise run setup --ci",
-  "mise run verify --all",
+  "mise run verify all",
 ]
 
 [tasks.clean]

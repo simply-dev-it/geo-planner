@@ -16,6 +16,12 @@
   when the separation has a concrete use case.
 - Prefer small public interfaces, explicit dependencies, and reversible changes.
 - Introduce dependencies and abstractions only for demonstrated needs.
+- Before adding workflow controls, write concrete user cases: user goal,
+  starting state, intentional action, resulting state, and forbidden transitions.
+  Include invalid input, correction, return to editing and read-only review.
+  Map each control to an evidenced case; omit convenience actions without one.
+  Derive regression scenarios and state guards from those cases, not only the
+  successful sequence of clicks.
 
 ## State And Safety
 
@@ -39,6 +45,8 @@
 
 - Test domain invariants, boundary validation, failure behavior, and unsafe
   inputs at the narrowest useful layer.
+- Test the current supported contract, not historical behavior of removed options
+  or inputs; test rejection only when it is part of an explicit current contract.
 - Add regression coverage for every correctness, parsing, persistence,
   integration, or public-contract bug.
 - Keep fixtures small, deterministic, and free of secrets or private data.

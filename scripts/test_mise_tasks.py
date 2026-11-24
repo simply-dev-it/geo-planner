@@ -69,15 +69,14 @@ if [ "${TASK_TEST_FAIL:-}" = "$(basename "$0")" ] || [ "${TASK_TEST_FAIL:-}" = "
         for task in ["start", "build"]:
             with self.subTest(task=task):
                 result = self.run_task(task)
-                self.assertIn("--all", result.stdout + result.stderr)
+                self.assertIn("all", result.stdout + result.stderr)
         for task in ["start", "build", "verify"]:
             self.run_task(task, "unknown", success=False)
-            self.run_task(task, "frontend", "--all", success=False)
             self.run_task(task, "--help")
         self.assertEqual(self.commands(), [])
 
     def test_start_all_clears_parent_selectors_and_runs_every_service(self):
-        self.run_task("start", "--all")
+        self.run_task("start", "all")
         self.assertCountEqual(self.commands(), [
             "npm --prefix frontend start",
             "gradlew :backend:bootRun --console=plain",
@@ -85,6 +84,13 @@ if [ "${TASK_TEST_FAIL:-}" = "$(basename "$0")" ] || [ "${TASK_TEST_FAIL:-}" = "
             "npm --prefix backend-simulator start",
             "npm --prefix frontend run storybook",
         ])
+
+    def test_frontend_simulator_target_only_changes_frontend_proxy(self):
+        self.run_task("start", "frontend:simulator")
+        self.assertEqual(self.commands(), ["npm --prefix frontend run start:simulator"])
+        self.log.unlink()
+        self.run_task("start", "frontend")
+        self.assertEqual(self.commands(), ["npm --prefix frontend start"])
 
     def test_build_routes_individual_targets_and_all(self):
         expected = {
@@ -98,7 +104,7 @@ if [ "${TASK_TEST_FAIL:-}" = "$(basename "$0")" ] || [ "${TASK_TEST_FAIL:-}" = "
             self.run_task("build", target)
             self.assertEqual(self.commands(), [command])
         self.log.unlink()
-        self.run_task("build", "--all")
+        self.run_task("build", "all")
         self.assertCountEqual(self.commands(), expected.values())
 
     def test_verify_targets_and_policy_compatibility(self):
@@ -121,11 +127,11 @@ if [ "${TASK_TEST_FAIL:-}" = "$(basename "$0")" ] || [ "${TASK_TEST_FAIL:-}" = "
         all_commands.append("python3 -m unittest discover -s scripts -p test_mise_tasks.py")
         all_commands.append("python3 -m unittest discover -s scripts -p test_check_markdown_links.py")
         all_commands.append("python3 scripts/check_markdown_links.py")
-        for args in [(), ("--all",)]:
+        for args in [(), ("all",)]:
             self.log.unlink()
             self.run_task("verify", *args)
             self.assertCountEqual(self.commands(), all_commands)
-        self.log.unlink()
+        self.log.unlink(missing_ok=True)
         self.run_task("verify-legacy")
         self.assertEqual(self.commands(), ["verify.sh"])
 
@@ -151,15 +157,15 @@ if [ "${TASK_TEST_FAIL:-}" = "$(basename "$0")" ] || [ "${TASK_TEST_FAIL:-}" = "
         ])
         self.log.unlink()
         self.env["TASK_TEST_FAIL"] = "gradlew"
-        self.run_task("build", "--all", success=False)
+        self.run_task("build", "all", success=False)
         self.assertEqual(self.commands(), ["gradlew :backend:bootJar"])
         self.log.unlink()
-        self.run_task("verify", "--all", success=False)
+        self.run_task("verify", "all", success=False)
         self.assertIn("gradlew :backend:check", self.commands())
 
     def test_legacy_gate_failure_reaches_verify_and_ci(self):
         self.env["TASK_TEST_FAIL"] = "verify.sh"
-        for args in [("verify", "--all"), ("ci",)]:
+        for args in [("verify", "all"), ("ci",)]:
             with self.subTest(args=args):
                 self.log.unlink(missing_ok=True)
                 self.run_task(*args, success=False)
@@ -169,7 +175,7 @@ if [ "${TASK_TEST_FAIL:-}" = "$(basename "$0")" ] || [ "${TASK_TEST_FAIL:-}" = "
 
     def test_broken_documentation_stops_aggregate_before_component_gates(self):
         self.env["TASK_TEST_FAIL"] = "python3 scripts/check_markdown_links.py"
-        self.run_task("verify", "--all", success=False)
+        self.run_task("verify", "all", success=False)
         self.assertEqual(self.commands(), [
             "python3 -m unittest discover -s scripts -p test_mise_tasks.py",
             "python3 -m unittest discover -s scripts -p test_check_markdown_links.py",

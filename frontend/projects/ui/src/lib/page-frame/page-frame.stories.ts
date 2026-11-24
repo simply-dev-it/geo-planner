@@ -8,7 +8,7 @@ const meta: Meta<PageFrame> = {
   tags: ['autodocs'],
   args: {
     applicationName: 'Geo Planner',
-    contextLabel: 'Fundament aplikacji',
+    contextLabel: 'Przestrzeń projektowa',
   },
   render: (args) => ({
     props: args,
