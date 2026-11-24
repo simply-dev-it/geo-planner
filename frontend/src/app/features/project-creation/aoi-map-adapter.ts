@@ -1,4 +1,7 @@
 import Feature from 'ol/Feature.js';
+import type ImageTile from 'ol/ImageTile.js';
+import type Tile from 'ol/Tile.js';
+import TileState from 'ol/TileState.js';
 import { validWorkingArea } from './working-area';
 import Map from 'ol/Map.js';
 import type MapBrowserEvent from 'ol/MapBrowserEvent.js';
@@ -38,6 +41,25 @@ interface Callbacks {
   onTileError(): void;
   onTileLoaded?(): void;
   onDrawFinished?(): void;
+  onAttributionsChanged?(attributions: readonly string[]): void;
+}
+
+const MAX_ATTRIBUTIONS = 5;
+const MAX_ATTRIBUTION_LENGTH = 200;
+
+/** Normalizes untrusted tile attribution header text for plain-text display. */
+export function normalizeAttribution(value: string | null): string | null {
+  if (!value) return null;
+  let text = '';
+  for (const char of value) {
+    const code = char.codePointAt(0) ?? 0;
+    text += code < 0x20 || code === 0x7f ? ' ' : char;
+  }
+  text = text.replace(/\s+/g, ' ').trim();
+  if (!text) return null;
+  return text.length > MAX_ATTRIBUTION_LENGTH
+    ? `${text.slice(0, MAX_ATTRIBUTION_LENGTH - 1)}…`
+    : text;
 }
 
 proj4.defs(
@@ -143,6 +165,9 @@ export class AoiMapAdapter {
   private editingEnabled = true;
   private readonly areaBox = boxStyle.clone();
   private readonly areaHandles = handleStyle.clone();
+  private readonly tileRequests = new AbortController();
+  private readonly tileObjectUrls = new Set<string>();
+  private readonly attributions: string[] = [];
 
   constructor(
     target: HTMLElement,
@@ -156,7 +181,14 @@ export class AoiMapAdapter {
       throw new Error('Tile URL must be a same-origin XYZ path');
     }
 
-    this.tiles = new XYZ({ url: tileUrl, projection, tileSize: 256, wrapX: false, maxZoom: 18 });
+    this.tiles = new XYZ({
+      url: tileUrl,
+      projection,
+      tileSize: 256,
+      wrapX: false,
+      maxZoom: 18,
+      tileLoadFunction: (tile, src) => this.loadTile(tile, src),
+    });
     const handles = this.areaHandles;
     handles.setGeometry((feature) =>
       this.editingEnabled ? handleStyle.getGeometryFunction()(feature) : undefined,
@@ -241,6 +273,50 @@ export class AoiMapAdapter {
       this.tiles.on('tileloaderror', () => this.callbacks.onTileError()),
       this.tiles.on('tileloadend', () => this.callbacks.onTileLoaded?.()),
     ];
+  }
+
+  /** Loads a tile through fetch so the contract's X-Map-Attribution header stays visible. */
+  private loadTile(tile: Tile, src: string): void {
+    const image = (tile as ImageTile).getImage();
+    if (!(image instanceof HTMLImageElement)) {
+      tile.setState(TileState.ERROR);
+      return;
+    }
+    Promise.resolve()
+      .then(() => fetch(src, { signal: this.tileRequests.signal, credentials: 'same-origin' }))
+      .then((response) => {
+        if (!response.ok) throw new Error(`Tile request failed with HTTP ${response.status}`);
+        this.recordAttribution(response.headers.get('X-Map-Attribution'));
+        return response.blob();
+      })
+      .then((blob) => {
+        if (this.destroyed) return;
+        const url = URL.createObjectURL(blob);
+        this.tileObjectUrls.add(url);
+        const release = () => {
+          URL.revokeObjectURL(url);
+          this.tileObjectUrls.delete(url);
+        };
+        image.addEventListener('load', release, { once: true });
+        image.addEventListener('error', release, { once: true });
+        image.src = url;
+      })
+      .catch(() => {
+        if (!this.destroyed) tile.setState(TileState.ERROR);
+      });
+  }
+
+  private recordAttribution(value: string | null): void {
+    const text = normalizeAttribution(value);
+    if (
+      this.destroyed ||
+      !text ||
+      this.attributions.includes(text) ||
+      this.attributions.length >= MAX_ATTRIBUTIONS
+    )
+      return;
+    this.attributions.push(text);
+    this.callbacks.onAttributionsChanged?.([...this.attributions]);
   }
 
   setExtent(bounds: Bounds | null): void {
@@ -339,6 +415,9 @@ export class AoiMapAdapter {
   destroy(): void {
     if (this.destroyed) return;
     this.destroyed = true;
+    this.tileRequests.abort();
+    this.tileObjectUrls.forEach((url) => URL.revokeObjectURL(url));
+    this.tileObjectUrls.clear();
     unByKey(this.listeners);
     this.map.removeInteraction(this.rectangle);
     this.map.setTarget(undefined);

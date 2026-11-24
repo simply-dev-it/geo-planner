@@ -16,7 +16,8 @@ export class SimulatorConnection {
   readonly connected = this._connected.asReadonly();
   private readonly _catalog = signal<Catalog | null>(null);
   readonly catalog = this._catalog.asReadonly();
-  readonly open = signal(false);
+  private readonly _open = signal(false);
+  readonly open = this._open.asReadonly();
   constructor() {
     if (this.enabled && this.http)
       this.http.get<unknown>('/_simulator/health').subscribe({
@@ -35,6 +36,9 @@ export class SimulatorConnection {
         },
         error: () => this._connected.set(false),
       });
+  }
+  hide() {
+    this._open.set(false);
   }
   show() {
     if (!this.enabled || !this._connected() || !this.http) return;
@@ -60,11 +64,11 @@ export class SimulatorConnection {
             typeof p.contextLabel === 'string',
         );
         this._catalog.set({ parcels });
-        this.open.set(true);
+        this._open.set(true);
       },
       error: () => {
         this._connected.set(false);
-        this.open.set(false);
+        this._open.set(false);
       },
     });
   }

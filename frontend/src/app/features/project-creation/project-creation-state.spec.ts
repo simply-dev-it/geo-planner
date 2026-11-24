@@ -289,6 +289,22 @@ describe('ProjectCreationState', () => {
     state.remove(parcel.id);
     expect(state.selectedCount()).toBe(1);
   });
+  it('cancels a pending parcel location when the lookup moves to another candidate', async () => {
+    state.search({ query: '101', regionId: '', type: '' });
+    await searchPage(
+      [
+        candidate(parcel.id),
+        { ...candidate('street'), type: 'street', parcelId: undefined, label: 'Lipowa' },
+      ],
+      null,
+    );
+    state.choose(parcel.id);
+    const pending = http.expectOne('/api/v1/parcels/resolve');
+    state.choose('street');
+    expect(pending.cancelled).toBe(true);
+    expect(state.locatedParcel()).toBeNull();
+    expect(state.lookupStage()).toBe('number');
+  });
   it('loads bounded viewport outlines independently, cancels stale views and reports failures', async () => {
     state.viewportChanged([100000, 200000, 101000, 201000]);
     await vi.advanceTimersByTimeAsync(301);
@@ -476,6 +492,31 @@ describe('ProjectCreationState', () => {
     expect(second.uncertain()).toBe(true);
     second.retrySave();
     http.expectNone('/api/v1/projects');
+  });
+  it('inserts a keyboard-created area centred in the viewport and fitted to it', () => {
+    state.insertArea();
+    expect(state.bounds()).toBeNull();
+    state.startMapSelection();
+    state.insertArea();
+    expect(state.bounds()).toBeNull();
+    expect(state.error()).toContain('Mapa nie jest jeszcze gotowa');
+    state.viewportChanged([100000, 200000, 101000, 200600]);
+    state.insertArea();
+    expect(state.bounds()).toEqual([100320, 200120, 100680, 200480]);
+    expect(state.camera()).toEqual(state.bounds());
+    discover();
+    expect(state.canPreview()).toBe(true);
+    state.viewportChanged([0, 0, 50000, 50000]);
+    state.insertArea();
+    expect(state.bounds()).toEqual([100320, 200120, 100680, 200480]);
+  });
+  it('limits an inserted area to 500 m when the viewport is large', () => {
+    state.startMapSelection();
+    state.viewportChanged([0, 0, 50000, 50000]);
+    state.insertArea();
+    expect(state.bounds()).toEqual([24750, 24750, 25250, 25250]);
+    expect(state.dimensions()).toBe('500 × 500 m');
+    discover();
   });
   it('keeps zero-parcel area selection keyboard compatible and persists only preferences', async () => {
     state.startMapSelection();

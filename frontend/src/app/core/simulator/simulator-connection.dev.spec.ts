@@ -26,6 +26,13 @@ describe('Development simulator connection', () => {
       .expectOne('/_simulator/catalog')
       .flush({ parcels: [{ id: 'one', parcelNumber: '101/1', contextLabel: 'Brzozowo' }] });
     expect(service.open()).toBe(true);
+    service.hide();
+    expect(service.open()).toBe(false);
+    service.show();
+    http
+      .expectOne('/_simulator/catalog')
+      .flush({ parcels: [{ id: 'one', parcelNumber: '101/1', contextLabel: 'Brzozowo' }] });
+    expect(service.open()).toBe(true);
     service.show();
     http.expectOne('/_simulator/catalog').flush({}, { status: 503, statusText: 'Unavailable' });
     expect(service.connected()).toBe(false);

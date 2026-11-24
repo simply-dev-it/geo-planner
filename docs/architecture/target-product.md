@@ -150,8 +150,9 @@ intersection reads for faint outlines before selection (maximum 2 × 2 km and
 100 features). It never mutates selected subjects, discovery suggestions or the
 working area. Coverage/failure states remain visible; larger views ask for zoom.
 Map selection is toggled by source identity, while rectangle edits preserve it.
-Selecting a parcel never creates or fits the rectangle; that requires drawing
-or the fit-to-parcels action. A chosen lookup result or explicit map-only entry gates the first continuation. Restored queries alone carry no such intent. Area validity is derived once for continuation
+Selecting a parcel never creates or fits the rectangle; that requires drawing,
+the keyboard-operable insert action (a square of at most 500 m centred in the
+current view, then resized with the area controls) or the fit-to-parcels action. A chosen lookup result or explicit map-only entry gates the first continuation. Restored queries alone carry no such intent. Area validity is derived once for continuation
 availability, navigation guards and invalid-map styling. Preview rejects subject,
 area and buffer commands at the feature-state boundary; its parcel list renders
 without action buttons. Users return to editing before changing those inputs.
@@ -272,6 +273,8 @@ but never authoritative projects, sketches, manifests, or acquisition records.
 - Preserve the last valid artifact when a refresh fails or is incomplete.
 - Redact secret-classified parameters and never log private sketch bodies.
 - Keep source date, attribution, uncertainty, and preview-only meaning visible.
+  Base-map tiles are fetched by the map adapter so each tile's
+  `X-Map-Attribution` header is shown as plain text on every map.
 - Keep automated tests and normal builds independent of live providers.
 
 Detailed provider and artifact safeguards are defined in

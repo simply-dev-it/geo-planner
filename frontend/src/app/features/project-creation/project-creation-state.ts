@@ -1,4 +1,3 @@
-import { HttpClient } from '@angular/common/http';
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { form, required, maxLength, min, max, disabled } from '@angular/forms/signals';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -16,7 +15,7 @@ import {
   SearchOptions,
 } from 'geo-planner-api';
 import { SearchState, SearchRow, ParcelRow, LookupStage } from 'ui';
-import { RuntimeConfigService } from '../../core/runtime-config/runtime-config';
+import { PROJECT_API, baseMapTileTemplate } from '../../core/project-api/project-api';
 import {
   Bounds,
   boundsOfCoordinates,
@@ -27,6 +26,7 @@ import {
   roundMapBounds,
   validWorkingArea,
 } from './working-area';
+const INSERTED_AREA_METRES = 500;
 const PENDING = 'geo-planner.pending-project-create.v1',
   PREFS = 'geo-planner.workspace-preferences.v1';
 interface Attempt {
@@ -36,9 +36,7 @@ interface Attempt {
 const emptySearch: SearchState = { query: '', regionId: '', type: '' };
 @Injectable()
 export class ProjectCreationState {
-  private readonly api = new ProjectApi(inject(HttpClient), {
-    apiBaseUrl: `${inject(RuntimeConfigService).value.apiBaseUrl.replace(/\/$/, '')}/v1`,
-  });
+  private readonly api = inject(PROJECT_API);
   private readonly router = inject(Router);
   private readonly destroy = inject(DestroyRef);
   private readonly queries = new Subject<(SearchState & { auto?: boolean }) | null>();
@@ -318,8 +316,7 @@ export class ProjectCreationState {
     if (stage === 'house' && (!this._chosenLocality() || !this._lookupStreet())) return;
     const previous = this._lookupStage();
     if (stage === 'locality' || stage === 'identifier') {
-      this.parcelRequest?.unsubscribe();
-      this._locatedParcel.set(null);
+      this.clearLocatedParcel();
       this._lookupStreet.set(null);
       if (stage === 'identifier') {
         this._chosenLocality.set(null);
@@ -436,7 +433,7 @@ export class ProjectCreationState {
     if (candidate.type === 'locality') {
       this._chosenLocality.set(candidate);
       this._lookupStreet.set(null);
-      this._locatedParcel.set(null);
+      this.clearLocatedParcel();
       this._query.update((q) => ({
         ...q,
         placeText: candidate.label,
@@ -449,7 +446,7 @@ export class ProjectCreationState {
       this.openLookup('street');
     } else if (candidate.type === 'street') {
       this._lookupStreet.set(candidate);
-      this._locatedParcel.set(null);
+      this.clearLocatedParcel();
       this._query.update((q) => ({
         ...q,
         streetText: candidate.label,
@@ -460,6 +457,11 @@ export class ProjectCreationState {
       this.editSearch({ ...this._query(), query: '' }, false);
     } else if (candidate.type === 'parcel' && candidate.parcelId)
       this.resolve({ type: 'identifier', value: candidate.parcelId }, true);
+  }
+  private clearLocatedParcel() {
+    this.parcelRequest?.unsubscribe();
+    this.parcelRequest = undefined;
+    this._locatedParcel.set(null);
   }
   addLocated() {
     const parcel = this._locatedParcel();
@@ -533,6 +535,21 @@ export class ProjectCreationState {
       return;
     }
     this.discover();
+  }
+  insertArea() {
+    const view = this._viewport();
+    if (!this.canEditArea() || this._bounds()) return;
+    if (!view) {
+      this._error.set('Mapa nie jest jeszcze gotowa. Spróbuj ponownie za chwilę.');
+      return;
+    }
+    const fit = Math.floor((Math.min(view[2] - view[0], view[3] - view[1]) * 0.6) / 10) * 10;
+    const side = Math.min(INSERTED_AREA_METRES, fit);
+    if (side < 10) return;
+    const next = centeredArea([(view[0] + view[2]) / 2, (view[1] + view[3]) / 2], side, side);
+    this.setBounds(next);
+    const inserted = this._bounds();
+    if (inserted && validWorkingArea(inserted)) this._camera.set(inserted);
   }
   resize(delta: number) {
     const b = this._bounds();
@@ -695,7 +712,7 @@ export class ProjectCreationState {
     };
   }
   tileUrl() {
-    return this.api.mapTileUrl('base-map', 0, 0, 0).replace(/0\/0\/0$/, '{z}/{x}/{y}');
+    return baseMapTileTemplate(this.api);
   }
   private persistPreferences() {
     try {

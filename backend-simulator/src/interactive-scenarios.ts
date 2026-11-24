@@ -1,9 +1,5 @@
 import { PUBLIC_SNAPSHOT, publicNeighbourhood } from './public-snapshot.js';
-import {
-  CIEZKOWICE_BOUNDS,
-  CIEZKOWICE_SNAPSHOT,
-  isSnapshotNeighbourhood,
-} from './snapshot-data.js';
+import { CIEZKOWICE_SNAPSHOT, isSnapshotNeighbourhood } from './snapshot-data.js';
 import { fixtureContainsPoint, fixtureIntersectsArea } from './fixture-geometry.js';
 import { createHash } from 'node:crypto';
 
@@ -373,7 +369,7 @@ export function searchSyntheticLocations(
       return false;
     if (options.localityId && p['localityId'] !== options.localityId) return false;
     if (options.communeId && p['localityId'] !== options.communeId) return false;
-    if (options.countyId && options.countyId !== p['regionId'] + '-county') return false;
+    if (options.countyId && options.countyId !== `${String(p['regionId'])}-county`) return false;
     if (options.streetId && options.streetId !== (p['streetId'] ?? p['id'])) return false;
     if (
       !options.streetId &&

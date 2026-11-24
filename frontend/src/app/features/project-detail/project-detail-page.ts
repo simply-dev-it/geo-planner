@@ -1,24 +1,25 @@
-import { HttpClient } from '@angular/common/http';
 import {
-  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
   ElementRef,
   OnDestroy,
+  OnInit,
   ViewChild,
+  computed,
+  effect,
   inject,
   signal,
 } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { Project, ProjectApi, ResolvedParcel } from 'geo-planner-api';
-import { Subscription } from 'rxjs';
+import { Project, ResolvedParcel } from 'geo-planner-api';
 
-import { RuntimeConfigService } from '../../core/runtime-config/runtime-config';
 import { parcelCountLabel } from '../project-creation/working-area';
 import { AoiMapAdapter } from '../project-creation/aoi-map-adapter';
+import { ProjectDetailState } from './project-detail-state';
 
 @Component({
   selector: 'app-project-detail-page',
+  providers: [ProjectDetailState],
   imports: [RouterLink],
   template: `
     <section class="saved-map">
@@ -47,6 +48,9 @@ import { AoiMapAdapter } from '../project-creation/aoi-map-adapter';
           <p role="alert">{{ error() }}</p>
         }
       </div>
+      @if (attributions().length) {
+        <p class="map-attribution">Podkład: {{ attributions().join(' · ') }}</p>
+      }
       @if (project(); as item) {
         <details class="source-card">
           <summary>Źródło i ograniczenia</summary>
@@ -55,6 +59,9 @@ import { AoiMapAdapter } from '../project-creation/aoi-map-adapter';
               {{ item.provenance.provider }} · {{ item.provenance.sourceDataDate ?? 'brak daty' }} ·
               EPSG:2180
             </p>
+            @if (item.provenance.attribution) {
+              <p>{{ item.provenance.attribution }}</p>
+            }
             @for (l of item.provenance.limitations; track $index) {
               <p>{{ l }}</p>
             }
@@ -109,6 +116,18 @@ import { AoiMapAdapter } from '../project-creation/aoi-map-adapter';
         font-size: 11px;
         color: #50634e;
       }
+      .map-attribution {
+        position: absolute;
+        left: 10px;
+        bottom: 12px;
+        max-width: calc(100% - 200px);
+        border-radius: 4px;
+        background: #ffffffde;
+        padding: 4px 7px;
+        font-size: 10px;
+        line-height: 1.3;
+        color: #50634e;
+      }
       .source-card summary {
         cursor: pointer;
       }
@@ -119,67 +138,58 @@ import { AoiMapAdapter } from '../project-creation/aoi-map-adapter';
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ProjectDetailPage implements AfterViewInit, OnDestroy {
+export class ProjectDetailPage implements OnInit, OnDestroy {
   @ViewChild('mapHost', { static: true }) private mapHost!: ElementRef<HTMLElement>;
   private readonly route = inject(ActivatedRoute);
-  private readonly api = new ProjectApi(inject(HttpClient), {
-    apiBaseUrl: `${inject(RuntimeConfigService).value.apiBaseUrl.replace(/\/$/, '')}/v1`,
-  });
+  private readonly state = inject(ProjectDetailState);
   private map?: AoiMapAdapter;
-  private request?: Subscription;
+  private readonly mapError = signal<string | null>(null);
   readonly parcelCountLabel = parcelCountLabel;
-  readonly project = signal<Project | null>(null);
-  readonly loading = signal(true);
+  readonly project = this.state.project;
+  readonly loading = this.state.loading;
   readonly rendered = signal(false);
-  readonly error = signal<string | null>(null);
+  readonly attributions = signal<readonly string[]>([]);
+  readonly error = computed(() => this.state.error() ?? this.mapError());
 
-  ngAfterViewInit(): void {
-    const tileUrl = this.api.mapTileUrl('base-map', 0, 0, 0).replace(/0\/0\/0$/, '{z}/{x}/{y}');
-    const id = this.route.snapshot.paramMap.get('id');
-    try {
-      if (!id) throw new Error('Missing project ID');
-      this.request = this.api.get(id).subscribe({
-        next: ({ data }) => {
-          this.loading.set(false);
-          this.project.set(data);
-          this.map = new AoiMapAdapter(this.mapHost.nativeElement, tileUrl, {
-            onPoint: () => undefined,
-            onExtentChanged: () => undefined,
-            onRenderComplete: () => this.rendered.set(true),
-            onTileError: () => this.error.set('Podkład mapy jest niedostępny.'),
-          });
+  constructor() {
+    effect(() => {
+      const project = this.state.project();
+      if (project && !this.map) this.render(project);
+    });
+  }
 
-          this.map?.setProjectFrame(data.workingExtent.bounds);
-          const parcels: ResolvedParcel[] = data.selectedParcels.flatMap((parcel) =>
-            parcel.id && parcel.geometry
-              ? [
-                  {
-                    id: parcel.id,
-                    geometry: parcel.geometry,
-                    crs: parcel.crs,
-                    axisOrder: parcel.axisOrder,
-                    source: parcel.source,
-                    sourceDataDate: parcel.sourceDataDate,
-                    limitations: [],
-                  },
-                ]
-              : [],
-          );
-          this.map?.setParcels(parcels);
-        },
-        error: () => {
-          this.loading.set(false);
-          this.error.set('Nie udało się otworzyć projektu.');
-        },
-      });
-    } catch {
-      this.loading.set(false);
-      this.error.set('Nieprawidłowy identyfikator projektu.');
-    }
+  ngOnInit(): void {
+    this.state.open(this.route.snapshot.paramMap.get('id'));
+  }
+
+  private render(project: Project): void {
+    this.map = new AoiMapAdapter(this.mapHost.nativeElement, this.state.tileUrl, {
+      onPoint: () => undefined,
+      onExtentChanged: () => undefined,
+      onRenderComplete: () => this.rendered.set(true),
+      onTileError: () => this.mapError.set('Podkład mapy jest niedostępny.'),
+      onAttributionsChanged: (texts) => this.attributions.set(texts),
+    });
+    this.map.setProjectFrame(project.workingExtent.bounds);
+    const parcels: ResolvedParcel[] = project.selectedParcels.flatMap((parcel) =>
+      parcel.id && parcel.geometry
+        ? [
+            {
+              id: parcel.id,
+              geometry: parcel.geometry,
+              crs: parcel.crs,
+              axisOrder: parcel.axisOrder,
+              source: parcel.source,
+              sourceDataDate: parcel.sourceDataDate,
+              limitations: [],
+            },
+          ]
+        : [],
+    );
+    this.map.setParcels(parcels);
   }
 
   ngOnDestroy(): void {
-    this.request?.unsubscribe();
     this.map?.destroy();
   }
 }

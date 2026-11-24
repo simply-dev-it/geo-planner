@@ -29,7 +29,7 @@ export class App {
   }
   protected closeCatalog() {
     this.catalogDialog()?.nativeElement.close();
-    this.simulator.open.set(false);
+    this.simulator.hide();
   }
   protected readonly simulator = inject(SimulatorConnection);
   protected readonly errorHandler = inject(ApplicationErrorHandler);

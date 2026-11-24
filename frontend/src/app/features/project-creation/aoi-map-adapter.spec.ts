@@ -12,7 +12,10 @@ import XYZ from 'ol/source/XYZ.js';
 import Style from 'ol/style/Style.js';
 import { vi } from 'vitest';
 
-import { AoiMapAdapter } from './aoi-map-adapter';
+import type Tile from 'ol/Tile.js';
+import TileState from 'ol/TileState.js';
+
+import { AoiMapAdapter, normalizeAttribution } from './aoi-map-adapter';
 
 describe('AoiMapAdapter', () => {
   let target: HTMLElement;
@@ -25,6 +28,7 @@ describe('AoiMapAdapter', () => {
     onTileError: ReturnType<typeof vi.fn<() => void>>;
     onTileLoaded: ReturnType<typeof vi.fn<() => void>>;
     onDrawFinished: ReturnType<typeof vi.fn<() => void>>;
+    onAttributionsChanged: ReturnType<typeof vi.fn<(texts: readonly string[]) => void>>;
   };
 
   beforeEach(() => {
@@ -44,6 +48,7 @@ describe('AoiMapAdapter', () => {
       onTileError: vi.fn(),
       onTileLoaded: vi.fn(),
       onDrawFinished: vi.fn(),
+      onAttributionsChanged: vi.fn(),
     };
     const addInteraction = vi.spyOn(Map.prototype, 'addInteraction');
     adapter = new AoiMapAdapter(target, '/api/v1/map/layers/base/tiles/{z}/{x}/{y}', callbacks);
@@ -310,5 +315,67 @@ describe('AoiMapAdapter', () => {
     expect(callbacks.onPoint).toHaveBeenCalledTimes(1);
     expect(callbacks.onTileError).toHaveBeenCalledTimes(1);
     expect(callbacks.onTileLoaded).toHaveBeenCalledTimes(1);
+  });
+
+  function fakeTile() {
+    const image = document.createElement('img');
+    const tile = { getImage: () => image, setState: vi.fn() };
+    return { image, tile, asTile: tile as unknown as Tile };
+  }
+
+  it('loads tiles through fetch and reports distinct, normalized attribution text', async () => {
+    const fetchMock = vi.fn((url: string) =>
+      Promise.resolve(
+        new Response(new Blob(['png']), {
+          status: 200,
+          headers: {
+            'X-Map-Attribution': url.endsWith('/1/0/0')
+              ? '  Archived  GUGiK\u0007 ORTO  '
+              : 'Archived GUGiK ORTO',
+          },
+        }),
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:tile');
+    const revoke = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+    const tiles = (map.getLayers().item(0) as TileLayer<XYZ>).getSource()!;
+    const first = fakeTile();
+    const second = fakeTile();
+    tiles.getTileLoadFunction()(first.asTile, '/api/v1/map/layers/base/tiles/1/0/0');
+    tiles.getTileLoadFunction()(second.asTile, '/api/v1/map/layers/base/tiles/2/0/0');
+    await vi.waitFor(() => expect(second.image.getAttribute('src')).toBe('blob:tile'));
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/v1/map/layers/base/tiles/1/0/0',
+      expect.objectContaining({ credentials: 'same-origin' }),
+    );
+    expect(callbacks.onAttributionsChanged).toHaveBeenCalledTimes(1);
+    expect(callbacks.onAttributionsChanged).toHaveBeenCalledWith(['Archived GUGiK ORTO']);
+    first.image.dispatchEvent(new globalThis.Event('load'));
+    expect(revoke).toHaveBeenCalledWith('blob:tile');
+    expect(first.tile.setState).not.toHaveBeenCalled();
+  });
+
+  it('marks failed tile responses as errors without reporting attribution', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() =>
+        Promise.resolve(
+          new Response('', { status: 503, headers: { 'X-Map-Attribution': 'Unavailable' } }),
+        ),
+      ),
+    );
+    const tiles = (map.getLayers().item(0) as TileLayer<XYZ>).getSource()!;
+    const failed = fakeTile();
+    tiles.getTileLoadFunction()(failed.asTile, '/api/v1/map/layers/base/tiles/1/0/0');
+    await vi.waitFor(() => expect(failed.tile.setState).toHaveBeenCalledWith(TileState.ERROR));
+    expect(callbacks.onAttributionsChanged).not.toHaveBeenCalled();
+  });
+
+  it('normalizes untrusted attribution header text', () => {
+    expect(normalizeAttribution(null)).toBeNull();
+    expect(normalizeAttribution(' \n\t ')).toBeNull();
+    expect(normalizeAttribution('a\nb')).toBe('a b');
+    expect(normalizeAttribution('x'.repeat(300))).toHaveLength(200);
   });
 });

@@ -1,5 +1,4 @@
 """Explicit bounded public-provider capture; never run by build/test/hot reload."""
-import concurrent.futures
 import datetime
 import hashlib
 import json

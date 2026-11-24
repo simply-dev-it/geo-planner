@@ -29,6 +29,7 @@ export class ProjectCreationPage implements AfterViewInit, OnDestroy {
   readonly mapAvailable = signal(true);
   readonly drawing = signal(false);
   readonly sourceOpen = signal(false);
+  readonly attributions = signal<readonly string[]>([]);
   readonly previewWarnings = computed(() => this.state.preview()?.warnings.length ?? 0);
   constructor() {
     effect(() => {
@@ -62,6 +63,7 @@ export class ProjectCreationPage implements AfterViewInit, OnDestroy {
         onTileError: () => this.mapAvailable.set(false),
         onTileLoaded: () => this.mapAvailable.set(true),
         onDrawFinished: () => this.drawing.set(false),
+        onAttributionsChanged: (texts) => this.attributions.set(texts),
       }),
     );
   }

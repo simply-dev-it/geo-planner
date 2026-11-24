@@ -21,8 +21,8 @@
 @if (simulator.open()) {
   <dialog
     #catalogDialog
-    (cancel)="simulator.open.set(false)"
-    (close)="simulator.open.set(false)"
+    (cancel)="simulator.hide()"
+    (close)="simulator.hide()"
     aria-labelledby="catalog-title"
     class="m-auto max-h-[85dvh] w-[calc(100%-2rem)] max-w-xl overflow-hidden rounded-xl border-0 bg-white p-0 shadow-xl"
   >

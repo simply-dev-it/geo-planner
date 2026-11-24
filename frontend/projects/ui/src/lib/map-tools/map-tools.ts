@@ -27,6 +27,14 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
       >
         ＋
       </button>
+    } @else {
+      <button
+        class="gp-map-button"
+        (click)="insertRequested.emit()"
+        [disabled]="disabled() || drawing()"
+      >
+        Wstaw obszar na środku mapy
+      </button>
     }`,
 })
 export class MapTools {
@@ -34,5 +42,6 @@ export class MapTools {
   readonly drawing = input(false);
   readonly disabled = input(false);
   readonly drawRequested = output<void>();
+  readonly insertRequested = output<void>();
   readonly resizeRequested = output<number>();
 }

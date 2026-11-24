@@ -228,6 +228,7 @@
         [drawing]="drawing()"
         [disabled]="state.locked()"
         (drawRequested)="draw()"
+        (insertRequested)="state.insertArea()"
         (resizeRequested)="state.resize($event)"
       />
     }
@@ -249,6 +250,9 @@
         }}
       </div>
     }
+    @if (attributions().length) {
+      <p class="map-attribution">Podkład: {{ attributions().join(' · ') }}</p>
+    }
     <button
       class="map-source"
       (click)="sourceOpen.set(!sourceOpen())"
@@ -267,6 +271,9 @@
           <p>
             {{ provenance.provider }} · {{ provenance.sourceDataDate ?? 'brak daty' }} · EPSG:2180
           </p>
+          @if (provenance.attribution) {
+            <p>{{ provenance.attribution }}</p>
+          }
           @for (limitation of provenance.limitations; track $index) {
             <p>{{ limitation }}</p>
           }

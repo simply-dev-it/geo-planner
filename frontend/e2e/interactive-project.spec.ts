@@ -102,6 +102,33 @@ test('lookup is read-only and an explicit map-only shortcut opens project select
   await expect(page.getByRole('button', { name: 'Zaznacz obszar', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Podgląd obszaru →' })).toBeDisabled();
 });
+test('keyboard-only map entry inserts a parcel-free area, previews it and shows tile attribution', async ({
+  page,
+}) => {
+  await page.goto('/projects/new');
+  const skip = page.getByRole('button', {
+    name: 'Pomiń wyszukiwanie — wybiorę na mapie',
+    exact: true,
+  });
+  await skip.focus();
+  await page.keyboard.press('Enter');
+  const insert = page.getByRole('button', { name: 'Wstaw obszar na środku mapy', exact: true });
+  await insert.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('.map-dimensions')).toContainText('500 × 500 m');
+  await expect(insert).toHaveCount(0);
+  await page.getByRole('button', { name: 'Powiększ obszar', exact: true }).focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('.map-dimensions')).toContainText('550 × 550 m');
+  await expect(page.locator('.map-attribution')).toContainText(/^\s*Podkład: \S/);
+  const next = page.getByRole('button', { name: 'Podgląd obszaru →' });
+  await expect(next).toBeEnabled();
+  await next.focus();
+  await page.keyboard.press('Enter');
+  await page.getByLabel('Nazwa projektu', { exact: true }).fill('Obszar z klawiatury');
+  await expect(page.getByRole('button', { name: 'Zapisz projekt', exact: true })).toBeEnabled();
+});
+
 test('locality to street to house number shows one input and never selects project subjects', async ({
   page,
 }) => {
@@ -368,6 +395,7 @@ test('archived Ciezkowice lookup shows real orthophoto and parcels, then adds on
   await preview(page, 'Ciężkowice');
   await page.getByRole('button', { name: 'Zapisz projekt', exact: true }).click();
   await expect(page.getByRole('region', { name: 'Mapa zapisanego projektu' })).toBeVisible();
+  await expect(page.locator('.map-attribution')).toContainText('Archived GUGiK ORTO snapshot');
 });
 
 test('replays real locality ambiguity and qualified street-house lookup from public captures', async ({
